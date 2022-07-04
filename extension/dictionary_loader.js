@@ -86,7 +86,8 @@ Dictionary.prototype.log = function(obj) {
 Dictionary.prototype.doUpdate = function(fs) {
   var self = this;
   var xhr = new XMLHttpRequest();
-  xhr.open('GET', 'http://skk-dict-mirror.appspot.com/' + this.dictionary_name);
+  xhr.responseType = 'arraybuffer';
+  xhr.open('GET', 'https://skk-dev.github.io/dict/' + this.dictionary_name);
   self.log({status:'loading'});
   xhr.onreadystatechange = function() {
     if (xhr.readyState != 4) {
@@ -95,23 +96,31 @@ Dictionary.prototype.doUpdate = function(fs) {
 
     self.log({status:'loaded'});
 
-    self.systemDict = self.parseData(xhr.responseText);
-    self.log({'status':'parsed'});
-    fs.root.getFile(
-      'system-dictionary.json', {create:true}, function(fileEntry) {
-        fileEntry.createWriter(function(fileWriter) {
-          fileWriter.onwriteend = function(e) {
-            var dict_size = 0;
-            for (var w in self.systemDict) dict_size++;
-            self.log({'status':'written'});
-            self.logger = null;
-          };
-          var blob = new Blob([JSON.stringify(self.systemDict)],
-                              {'type': 'text/plain'});
-          fileWriter.write(blob);
+    var fr = new FileReader;
+    fr.onloadend = function() {
+      var response = fr.result;
+      console.log(response);
+      self.systemDict = self.parseData(response);
+      self.log({'status':'parsed'});
+      fs.root.getFile(
+        'system-dictionary.json', {create:true}, function(fileEntry) {
+          fileEntry.createWriter(function(fileWriter) {
+            fileWriter.onwriteend = function(e) {
+              var dict_size = 0;
+              for (var w in self.systemDict) dict_size++;
+              self.log({'status':'written'});
+              self.logger = null;
+            };
+            var blob = new Blob([JSON.stringify(self.systemDict)],
+                                {'type': 'text/plain'});
+            fileWriter.write(blob);
+          });
         });
-      });
-    };
+    }
+    var compressed = new Uint8Array(xhr.response);
+    var decompressed = pako.inflate(compressed);
+    fr.readAsText(new Blob([decompressed], {type: "text/plain"}), 'euc-jp');
+  };
   xhr.send();
 };
 
@@ -170,7 +179,7 @@ Dictionary.prototype.initSystemDictionary = function() {
   }
 
   var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS);
+  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS, function(error) { console.error(error); });
 };
 
 Dictionary.prototype.lookup = function(reading) {
