@@ -12,6 +12,7 @@
       "roman_modes.js",
       "preedit_modes.js",
       "conversion_modes.js",
+      "pako.es5.min.js",
       "main.js"
     ]
   },
