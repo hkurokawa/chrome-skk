@@ -190,6 +190,9 @@ SKK.prototype.updateComposition = function() {
 
 SKK.prototype.handleKeyEvent = function(keyevent) {
   // Do not handle modifier only keyevent.
+  // 0xFFFD hack seems not working?
+  if (keyevent.ctrlKey && keyevent.key == "Ctrl") return false;
+  if (keyevent.altKey && keyevent.key == "Alt") return false;
   if (keyevent.key.charCodeAt(0) == 0xFFFD) {
     return false;
   }
