@@ -1,20 +1,17 @@
 function Dictionary() {
   this.userDict = {};
   this.systemDict = {};
-  this.dictionary_url = '';
-  this.dictionary_compression_format = '';
-  this.dictionary_encoding = 'utf-8';
-  if (localStorage.getItem('system-dictionary-url')) {
-    this.dictionary_url = localStorage.getItem('system-dictionary-url');
-  }
-  if (localStorage.getItem('system-dictionary-compression-format')) {
-    this.dictionary_compression_format = localStorage.getItem('system-dictionary-compression-format');
-  }
-  if (localStorage.getItem('system-dictionary-encoding')) {
-    this.dictionary_encoding = localStorage.getItem('system-dictionary-encoding');
-  }
+  this.systemDictParam = {};
+  var self = this;
+  chrome.storage.sync.get('options', (data) => {
+    console.dir({'status': 'loaded saved options', 'data': data});
+    if (data.options && data.options.system_dictionary) {
+      self.systemDictParam = data.options.system_dictionary;
+    }
+  });
   this.logger = null;
   this.initSystemDictionary();
+  this.registerStorageListeners();
 }
 
 (function() {
@@ -91,113 +88,71 @@ Dictionary.prototype.log = function(obj) {
   }
 };
 
-Dictionary.prototype.doUpdate = function(fs) {
-  if (!this.dictionary_url) return
+Dictionary.prototype.registerStorageListeners = function() {
   var self = this;
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'arraybuffer';
-  xhr.open('GET', this.dictionary_url);
-  self.log({'status': 'loading', 'dictionary_url': this.dictionary_url, 'compression': this.dictionary_compression_format, 'encoding': this.dictionary_encoding});
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState != 4) {
+  chrome.storage.onChanged.addListener(function (changes, namespace) {
+    if (changes.options && changes.options.newValue.system_dictionary) {
+      var param = changes.options.newValue.system_dictionary;
+      self.systemDictParam = param;
+      self.reloadSystemDictionary();
+    }
+  });
+}
+
+Dictionary.prototype.doUpdate = function(fs) {
+  if (!this.systemDictParam || !this.systemDictParam.url) return
+  var self = this;
+  self.log({'status': 'loading', 'param': self.systemDictParam});
+  fetch(this.systemDictParam.url).then((response) => {
+    self.log({status:'loaded'});
+    if (!response.ok) {
+      self.log({status: 'error', statusCode: response.status});
       return;
     }
 
-    self.log({status:'loaded'});
-
     var fr = new FileReader;
     fr.onloadend = function() {
-      var response = fr.result;
-      self.systemDict = self.parseData(response);
+      self.systemDict = self.parseData(fr.result);
       self.log({'status':'parsed'});
-      fs.root.getFile(
-        'system-dictionary.json', {create:true}, function(fileEntry) {
-          fileEntry.createWriter(function(fileWriter) {
-            fileWriter.onwriteend = function(e) {
-              var dict_size = 0;
-              for (var w in self.systemDict) dict_size++;
-              self.log({'status':'written'});
-              self.logger = null;
-            };
-            var blob = new Blob([JSON.stringify(self.systemDict)],
-                                {'type': 'text/plain'});
-            fileWriter.write(blob);
-          });
-        });
+      var systemDict = self.systemDict;
+      chrome.storage.local.set({ systemDict });
+      self.log({'status':'written'});
+      self.logger = null;
     }
-    var compressed = new Uint8Array(xhr.response);
-    var decompressed;
-    if (self.dictionary_compression_format == 'gz') {
-      self.log({'status': 'decompressing'});
-      decompressed = pako.inflate(compressed);
-    } else {
-      decompressed = compressed;
-    }
-    fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.dictionary_encoding);
-  };
-  xhr.send();
+    response.arrayBuffer().then((compressed) => {
+      var decompressed;
+      if (self.systemDictParam.compression_format == 'gz') {
+        self.log({'status': 'decompressing'});
+        decompressed = pako.inflate(compressed);
+        self.log({'status': 'decompressed'});
+      } else {
+        decompressed = compressed;
+      }
+      fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.systemDictParam.encoding);
+    });
+  });
 };
 
 Dictionary.prototype.reloadSystemDictionary = function(logger) {
   this.logger = logger;
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, this.doUpdate.bind(this));
-};
-
-Dictionary.prototype.setSystemDictionaryUrl = function(dictionary_url, compression_format, encoding) {
-  localStorage.setItem('system-dictionary-url', dictionary_url);
-  localStorage.setItem('system-dictionary-compression-format', compression_format);
-  localStorage.setItem('system-dictionary-encoding', encoding);
-  this.dictionary_url = dictionary_url;
-  this.dictionary_compression_format = compression_format;
-  this.dictionary_encoding = encoding;
+  this.doUpdate();
 };
 
 Dictionary.prototype.syncUserDictionary = function() {
-  var self = this;
-  function onInitFS(fs) {
-    fs.root.getFile('user-dictionary.json', {create:true}, function(fileEntry) {
-      fileEntry.createWriter(function(fileWriter) {
-        var blob = new Blob([JSON.stringify(self.userDict)],
-                            {'type': 'text/plain'});
-        fileWriter.write(blob);
-      });
-    });
-  }
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS);
+  var userDict = this.userDict;
+  chrome.storage.local.set({ userDict });
 };
 
 Dictionary.prototype.initSystemDictionary = function() {
   var self = this;
-  function onInitFS(fs) {
-    fs.root.getFile('system-dictionary.json', {}, function(fileEntry) {
-      fileEntry.file(function(file) {
-        var reader = new FileReader();
-        reader.onloadend = function(e) {
-          self.systemDict = JSON.parse(reader.result);
-          var dict_size = 0;
-          for (var w in self.systemDict) dict_size++;
-          self.log({'status':'loaded_from_file',
-                    dict_size: dict_size});
-        };
-        reader.onerror = function(e) { self.doUpdate(fs); };
-        reader.readAsText(file);
-      }, function() { self.doUpdate(fs); });
-    }, function() { self.doUpdate(fs); });
-    fs.root.getFile('user-dictionary.json', {}, function(fileEntry) {
-      fileEntry.file(function(file) {
-        var reader = new FileReader();
-        reader.onloadend = function(e) {
-          this.userDict = JSON.parse(reader.result);
-        };
-        reader.readAsText(file);
-      });
-    });
-  }
-
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS, function(error) { console.error(error); });
+  chrome.storage.local.get('systemDict', (data) => {
+    if (data.systemDict) {
+      self.log({'status':'loaded_systemDict_from_file', dict_size: data.systemDict.length});
+      self.systemDict = data.systemDict;
+    } else {
+      self.doUpdate();
+    }
+  });
 };
 
 Dictionary.prototype.lookup = function(reading) {

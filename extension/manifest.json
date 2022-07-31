@@ -1,20 +1,10 @@
 {
   "name": "SKK Japanese Input",
-  "version": "0.1.8",
-  "manifest_version": 2,
+  "version": "0.1.9",
+  "manifest_version": 3,
   "description": "SKK implementation for ChromeOS Input Method API",
   "background": {
-    "scripts": [
-      "skk.js",
-      "roman_table.js",
-      "dictionary_loader.js",
-      "ascii_modes.js",
-      "roman_modes.js",
-      "preedit_modes.js",
-      "conversion_modes.js",
-      "pako_inflate.es5.min.js",
-      "main.js"
-    ]
+    "service_worker": "background.js"
   },
   "options_page": "options.html",
   "input_components": [
@@ -43,7 +33,7 @@
   ],
   "permissions": [
     "input",
-    "http://skk-dict-mirror.appspot.com/*",
-    "https://skk-dict-mirror.appspot.com/*"
+    "storage",
+    "unlimitedStorage"
   ]
 }
