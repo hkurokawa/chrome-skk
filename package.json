@@ -1,0 +1,12 @@
+{
+  "name": "chrome-skk",
+  "version": "0.0.1",
+  "description": "SKK for Chrome OS",
+  "main": "index.js",
+  "repository": "ssh://git@github.com/hkurokawa/chrome-skk.git",
+  "author": "hkurokawa <hirosh.kurokawa@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "pako": "^2.0.4"
+  }
+}
