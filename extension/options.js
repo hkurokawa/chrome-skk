@@ -1,14 +1,12 @@
-var dictionary_suffixes = ['S', 'M', 'ML', 'L', 'L.unannotated', 'assoc',
-                           'china_taiwan', 'edict', 'fullname', 'geo',
-                           'itaiji', 'jinmei', 'law', 'mazegaki', 'okinawa',
-                           'propernoun'];
+var compression_formats = [['gzip', 'gz'], ['none', '']];
+var encodings = [['EUC-JP', 'euc-jp'], ['UTF-8', 'utf-8']];
 
 function logger(obj) {
   var div = document.getElementById('reloading_message');
   div.innerHTML = '';
   if (obj.status == 'written') {
     div.style.display = 'none';
-    document.getElementById('system_dictionary_values').disabled = '';
+    document.getElementById('system_dictionary').disabled = '';
     document.getElementById('reload_button').disabled = '';
     return;
   }
@@ -21,50 +19,28 @@ function logger(obj) {
   }
 }
 
+function buildSelect(selectElement, options) {
+  for (var i = 0; i < options.length; i++) {
+    var option = document.createElement('option');
+    option.textContent = options[i][0];
+    option.value = options[i][1];
+    selectElement.appendChild(option);
+  }
+}
+
 function onload() {
   var bgPage = chrome.extension.getBackgroundPage();
-  var current_system_dictionary = bgPage.skk_dictionary.dictionary_name;
-  var form = document.getElementById('system_dictionary_values');
-  var ul = document.createElement('ul');
-  var inputs = [];
-  for (var i = 0; i < dictionary_suffixes.length; i++) {
-    var suffix = dictionary_suffixes[i];
-    var dict_name = 'SKK-JISYO.' + suffix + '.gz';
-    var li = document.createElement('li');
-    var input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'system-dictionary';
-    input.value = dict_name;
-    if (dict_name == current_system_dictionary) {
-      input.checked = 'checked';
-    }
-    input.id = 'system-dictionary-' + dict_name;
-    li.appendChild(input);
-    inputs.push(input);
-
-    var label = document.createElement('label');
-    label.htmlFor = input.id;
-    label.appendChild(document.createTextNode(dict_name));
-    li.appendChild(label);
-    ul.appendChild(li);
-  }
-
-  form.appendChild(ul);
+  var form = document.getElementById('system_dictionary');
+  var url_input = document.getElementById('url');
+  var compression_format = document.getElementById('compression_format');
+  buildSelect(compression_format, compression_formats);
+  var encoding = document.getElementById('encoding');
+  buildSelect(encoding, encodings);
 
   var reload_button = document.getElementById('reload_button');
 
-  form.onchange = function() {
-    for (var i = 0; i < inputs.length; i++) {
-      if (inputs[i].checked) {
-        bgPage.skk_dictionary.setSystemDictionaryName(inputs[i].value);
-        form.disabled = 'disabled';
-        reload_button.disabled = 'disabled';
-        bgPage.skk_dictionary.reloadSystemDictionary(logger);
-      }
-    }
-  };
-
   document.getElementById('reload_button').onclick = function() {
+    bgPage.skk_dictionary.setSystemDictionaryUrl(url_input.value, compression_format.value, encoding.value);
     form.disabled = 'disabled';
     reload_button.disabled = 'disabled';
     bgPage.skk_dictionary.reloadSystemDictionary(logger);
