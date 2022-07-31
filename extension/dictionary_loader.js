@@ -1,9 +1,17 @@
 function Dictionary() {
   this.userDict = {};
   this.systemDict = {};
-  this.dictionary_name = 'SKK-JISYO.S.gz';
-  if (localStorage.getItem('system-dictionary-name')) {
-    this.dictionary_name = localStorage.getItem('system-dictionary-name');
+  this.dictionary_url = '';
+  this.dictionary_compression_format = '';
+  this.dictionary_encoding = 'utf-8';
+  if (localStorage.getItem('system-dictionary-url')) {
+    this.dictionary_url = localStorage.getItem('system-dictionary-url');
+  }
+  if (localStorage.getItem('system-dictionary-compression-format')) {
+    this.dictionary_compression_format = localStorage.getItem('system-dictionary-compression-format');
+  }
+  if (localStorage.getItem('system-dictionary-encoding')) {
+    this.dictionary_encoding = localStorage.getItem('system-dictionary-encoding');
   }
   this.logger = null;
   this.initSystemDictionary();
@@ -84,11 +92,12 @@ Dictionary.prototype.log = function(obj) {
 };
 
 Dictionary.prototype.doUpdate = function(fs) {
+  if (!this.dictionary_url) return
   var self = this;
   var xhr = new XMLHttpRequest();
   xhr.responseType = 'arraybuffer';
-  xhr.open('GET', 'https://skk-dev.github.io/dict/' + this.dictionary_name);
-  self.log({status:'loading'});
+  xhr.open('GET', this.dictionary_url);
+  self.log({'status': 'loading', 'dictionary_url': this.dictionary_url, 'compression': this.dictionary_compression_format, 'encoding': this.dictionary_encoding});
   xhr.onreadystatechange = function() {
     if (xhr.readyState != 4) {
       return;
@@ -99,7 +108,6 @@ Dictionary.prototype.doUpdate = function(fs) {
     var fr = new FileReader;
     fr.onloadend = function() {
       var response = fr.result;
-      console.log(response);
       self.systemDict = self.parseData(response);
       self.log({'status':'parsed'});
       fs.root.getFile(
@@ -118,8 +126,14 @@ Dictionary.prototype.doUpdate = function(fs) {
         });
     }
     var compressed = new Uint8Array(xhr.response);
-    var decompressed = pako.inflate(compressed);
-    fr.readAsText(new Blob([decompressed], {type: "text/plain"}), 'euc-jp');
+    var decompressed;
+    if (self.dictionary_compression_format == 'gz') {
+      self.log({'status': 'decompressing'});
+      decompressed = pako.inflate(compressed);
+    } else {
+      decompressed = compressed;
+    }
+    fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.dictionary_encoding);
   };
   xhr.send();
 };
@@ -130,9 +144,13 @@ Dictionary.prototype.reloadSystemDictionary = function(logger) {
   request(window.TEMPORARY, 50 * 1024 * 1024, this.doUpdate.bind(this));
 };
 
-Dictionary.prototype.setSystemDictionaryName = function(dictionary_name) {
-  localStorage.setItem('system-dictionary-name', dictionary_name);
-  this.dictionary_name = dictionary_name;
+Dictionary.prototype.setSystemDictionaryUrl = function(dictionary_url, compression_format, encoding) {
+  localStorage.setItem('system-dictionary-url', dictionary_url);
+  localStorage.setItem('system-dictionary-compression-format', compression_format);
+  localStorage.setItem('system-dictionary-encoding', encoding);
+  this.dictionary_url = dictionary_url;
+  this.dictionary_compression_format = compression_format;
+  this.dictionary_encoding = encoding;
 };
 
 Dictionary.prototype.syncUserDictionary = function() {
