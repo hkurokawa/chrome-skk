@@ -94,48 +94,50 @@ Dictionary.prototype.log = function(obj) {
 Dictionary.prototype.doUpdate = function(fs) {
   if (!this.dictionary_url) return
   var self = this;
-  var xhr = new XMLHttpRequest();
-  xhr.responseType = 'arraybuffer';
-  xhr.open('GET', this.dictionary_url);
   self.log({'status': 'loading', 'dictionary_url': this.dictionary_url, 'compression': this.dictionary_compression_format, 'encoding': this.dictionary_encoding});
-  xhr.onreadystatechange = function() {
-    if (xhr.readyState != 4) {
-      return;
-    }
-
+  fetch(this.dictionary_url).then((response) => {
     self.log({status:'loaded'});
-
-    var fr = new FileReader;
-    fr.onloadend = function() {
-      var response = fr.result;
-      self.systemDict = self.parseData(response);
-      self.log({'status':'parsed'});
-      fs.root.getFile(
-        'system-dictionary.json', {create:true}, function(fileEntry) {
-          fileEntry.createWriter(function(fileWriter) {
-            fileWriter.onwriteend = function(e) {
-              var dict_size = 0;
-              for (var w in self.systemDict) dict_size++;
-              self.log({'status':'written'});
-              self.logger = null;
-            };
-            var blob = new Blob([JSON.stringify(self.systemDict)],
-                                {'type': 'text/plain'});
-            fileWriter.write(blob);
-          });
-        });
+    if (!response.ok) {
+      self.log({status: 'error', statusCode: response.status});
+      throw new Error("Failed to load " + self.dictionary_url + ": [" + response.statusCode + "] " + response.statusText);
     }
-    var compressed = new Uint8Array(xhr.response);
+    return response.arrayBuffer();
+  }).then((binary) => {
     var decompressed;
     if (self.dictionary_compression_format == 'gz') {
       self.log({'status': 'decompressing'});
-      decompressed = pako.inflate(compressed);
+      decompressed = pako.inflate(binary);
     } else {
-      decompressed = compressed;
+      decompressed = binary;
     }
-    fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.dictionary_encoding);
-  };
-  xhr.send();
+    return Promise.resolve(decompressed);
+  }).then((decompressed) => {
+    return new Promise((resolve, reject) => {
+      var fr = new FileReader;
+      fr.onload = () => {
+        resolve(fr.result)
+      };
+      fr.onerror = reject;
+      fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.dictionary_encoding);
+    });
+  }).then((content) => {
+    self.systemDict = self.parseData(content);
+    self.log({'status':'parsed'});
+    fs.root.getFile(
+      'system-dictionary.json', {create:true}, function(fileEntry) {
+        fileEntry.createWriter(function(fileWriter) {
+          fileWriter.onwriteend = function(e) {
+            var dict_size = 0;
+            for (var w in self.systemDict) dict_size++;
+            self.log({'status':'written'});
+            self.logger = null;
+          };
+          var blob = new Blob([JSON.stringify(self.systemDict)],
+                              {'type': 'text/plain'});
+          fileWriter.write(blob);
+        });
+      });
+  });
 };
 
 Dictionary.prototype.reloadSystemDictionary = function(logger) {
