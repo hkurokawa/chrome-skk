@@ -1,6 +1,6 @@
 {
   "name": "SKK Japanese Input",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "manifest_version": 2,
   "description": "SKK implementation for ChromeOS Input Method API",
   "background": {
@@ -44,8 +44,6 @@
   "permissions": [
     "input",
     "storage",
-    "unlimitedStorage",
-    "http://skk-dict-mirror.appspot.com/*",
-    "https://skk-dict-mirror.appspot.com/*"
+    "unlimitedStorage"
   ]
 }
