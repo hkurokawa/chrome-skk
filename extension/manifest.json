@@ -43,6 +43,7 @@
   ],
   "permissions": [
     "input",
+    "storage",
     "http://skk-dict-mirror.appspot.com/*",
     "https://skk-dict-mirror.appspot.com/*"
   ]
