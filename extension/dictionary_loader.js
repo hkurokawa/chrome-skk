@@ -2,15 +2,20 @@ function Dictionary() {
   this.userDict = {};
   this.systemDict = {};
   this.systemDictParam = {};
-  if (localStorage.getItem('system-dictionary-url')) {
-    this.systemDictParam.url = localStorage.getItem('system-dictionary-url');
-  }
-  if (localStorage.getItem('system-dictionary-compression-format')) {
-    this.systemDictParam.compression = localStorage.getItem('system-dictionary-compression-format');
-  }
-  if (localStorage.getItem('system-dictionary-encoding')) {
-    this.systemDictParam.encoding = localStorage.getItem('system-dictionary-encoding');
-  }
+  var self = this;
+  chrome.storage.sync.get('options', (data) => {
+    console.dir({'status': 'loaded saved options', 'data': data});
+    if (data.options && data.options.system_dictionary) {
+      self.systemDictParam = data.options.system_dictionary;
+    }
+  });
+  chrome.storage.onChanged.addListener(function (changes, namespace) {
+    if (changes.options && changes.options.newValue.system_dictionary) {
+      var param = changes.options.newValue.system_dictionary;
+      self.systemDictParam = param;
+      self.reloadSystemDictionary();
+    }
+  });
   this.logger = null;
   this.initSystemDictionary();
 }
@@ -145,13 +150,6 @@ Dictionary.prototype.reloadSystemDictionary = function(logger) {
   this.logger = logger;
   var request = window.requestFileSystem || window.webkitRequestFileSystem;
   request(window.TEMPORARY, 50 * 1024 * 1024, this.doUpdate.bind(this));
-};
-
-Dictionary.prototype.setSystemDictionaryUrl = function(param) {
-  localStorage.setItem('system-dictionary-url', param.url);
-  localStorage.setItem('system-dictionary-compression-format', param.compression);
-  localStorage.setItem('system-dictionary-encoding', param.encoding);
-  this.systemDictParam = param;
 };
 
 Dictionary.prototype.syncUserDictionary = function() {
