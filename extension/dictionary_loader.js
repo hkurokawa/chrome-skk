@@ -94,7 +94,7 @@ Dictionary.prototype.log = function(obj) {
   }
 };
 
-Dictionary.prototype.doUpdate = function(fs) {
+Dictionary.prototype.doUpdate = function() {
   if (!this.systemDictParam.url) return
   var self = this;
   var url = this.systemDictParam.url;
@@ -127,76 +127,35 @@ Dictionary.prototype.doUpdate = function(fs) {
       fr.readAsText(new Blob([decompressed], {type: "text/plain"}), encoding);
     });
   }).then((content) => {
-    self.systemDict = self.parseData(content);
+    var systemDict = self.parseData(content);
+    self.systemDict = systemDict;
     self.log({'status':'parsed'});
-    fs.root.getFile(
-      'system-dictionary.json', {create:true}, function(fileEntry) {
-        fileEntry.createWriter(function(fileWriter) {
-          fileWriter.onwriteend = function(e) {
-            var dict_size = 0;
-            for (var w in self.systemDict) dict_size++;
-            self.log({'status':'written'});
-            self.logger = null;
-          };
-          var blob = new Blob([JSON.stringify(self.systemDict)],
-                              {'type': 'text/plain'});
-          fileWriter.write(blob);
-        });
-      });
+    chrome.storage.local.set({ systemDict });
+    self.log({'status':'written'});
+    self.logger = null;
   });
 };
 
 Dictionary.prototype.reloadSystemDictionary = function(logger) {
   this.logger = logger;
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, this.doUpdate.bind(this));
+  this.doUpdate();
 };
 
 Dictionary.prototype.syncUserDictionary = function() {
-  var self = this;
-  function onInitFS(fs) {
-    fs.root.getFile('user-dictionary.json', {create:true}, function(fileEntry) {
-      fileEntry.createWriter(function(fileWriter) {
-        var blob = new Blob([JSON.stringify(self.userDict)],
-                            {'type': 'text/plain'});
-        fileWriter.write(blob);
-      });
-    });
-  }
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS);
+  var userDict = this.userDict;
+  chrome.storage.local.set({ userDict });
 };
 
 Dictionary.prototype.initSystemDictionary = function() {
   var self = this;
-  function onInitFS(fs) {
-    fs.root.getFile('system-dictionary.json', {}, function(fileEntry) {
-      fileEntry.file(function(file) {
-        var reader = new FileReader();
-        reader.onloadend = function(e) {
-          self.systemDict = JSON.parse(reader.result);
-          var dict_size = 0;
-          for (var w in self.systemDict) dict_size++;
-          self.log({'status':'loaded_from_file',
-                    dict_size: dict_size});
-        };
-        reader.onerror = function(e) { self.doUpdate(fs); };
-        reader.readAsText(file);
-      }, function() { self.doUpdate(fs); });
-    }, function() { self.doUpdate(fs); });
-    fs.root.getFile('user-dictionary.json', {}, function(fileEntry) {
-      fileEntry.file(function(file) {
-        var reader = new FileReader();
-        reader.onloadend = function(e) {
-          this.userDict = JSON.parse(reader.result);
-        };
-        reader.readAsText(file);
-      });
-    });
-  }
-
-  var request = window.requestFileSystem || window.webkitRequestFileSystem;
-  request(window.TEMPORARY, 50 * 1024 * 1024, onInitFS, function(error) { console.error(error); });
+  chrome.storage.local.get('systemDict', (data) => {
+    if (data.systemDict) {
+      self.log({'status':'loaded_from_storage', dict_size: data.systemDict.length});
+      self.systemDict = data.systemDict;
+    } else {
+      self.doUpdate();
+    }
+  });
 };
 
 Dictionary.prototype.lookup = function(reading) {
