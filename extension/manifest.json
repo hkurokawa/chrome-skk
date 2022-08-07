@@ -44,6 +44,7 @@
   "permissions": [
     "input",
     "storage",
+    "unlimitedStorage",
     "http://skk-dict-mirror.appspot.com/*",
     "https://skk-dict-mirror.appspot.com/*"
   ]
