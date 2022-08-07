@@ -1,17 +1,15 @@
 function Dictionary() {
   this.userDict = {};
   this.systemDict = {};
-  this.dictionary_url = '';
-  this.dictionary_compression_format = '';
-  this.dictionary_encoding = 'utf-8';
+  this.systemDictParam = {};
   if (localStorage.getItem('system-dictionary-url')) {
-    this.dictionary_url = localStorage.getItem('system-dictionary-url');
+    this.systemDictParam.url = localStorage.getItem('system-dictionary-url');
   }
   if (localStorage.getItem('system-dictionary-compression-format')) {
-    this.dictionary_compression_format = localStorage.getItem('system-dictionary-compression-format');
+    this.systemDictParam.compression = localStorage.getItem('system-dictionary-compression-format');
   }
   if (localStorage.getItem('system-dictionary-encoding')) {
-    this.dictionary_encoding = localStorage.getItem('system-dictionary-encoding');
+    this.systemDictParam.encoding = localStorage.getItem('system-dictionary-encoding');
   }
   this.logger = null;
   this.initSystemDictionary();
@@ -92,19 +90,22 @@ Dictionary.prototype.log = function(obj) {
 };
 
 Dictionary.prototype.doUpdate = function(fs) {
-  if (!this.dictionary_url) return
+  if (!this.systemDictParam.url) return
   var self = this;
-  self.log({'status': 'loading', 'dictionary_url': this.dictionary_url, 'compression': this.dictionary_compression_format, 'encoding': this.dictionary_encoding});
-  fetch(this.dictionary_url).then((response) => {
+  var url = this.systemDictParam.url;
+  var compression = this.systemDictParam.compression;
+  var encoding = this.systemDictParam.encoding;
+  self.log({'status': 'loading', 'url': url, 'compression': compression, 'encoding': encoding});
+  fetch(url).then((response) => {
     self.log({status:'loaded'});
     if (!response.ok) {
       self.log({status: 'error', statusCode: response.status});
-      throw new Error("Failed to load " + self.dictionary_url + ": [" + response.statusCode + "] " + response.statusText);
+      throw new Error("Failed to load " + url + ": [" + response.statusCode + "] " + response.statusText);
     }
     return response.arrayBuffer();
   }).then((binary) => {
     var decompressed;
-    if (self.dictionary_compression_format == 'gz') {
+    if (compression == 'gz') {
       self.log({'status': 'decompressing'});
       decompressed = pako.inflate(binary);
     } else {
@@ -118,7 +119,7 @@ Dictionary.prototype.doUpdate = function(fs) {
         resolve(fr.result)
       };
       fr.onerror = reject;
-      fr.readAsText(new Blob([decompressed], {type: "text/plain"}), self.dictionary_encoding);
+      fr.readAsText(new Blob([decompressed], {type: "text/plain"}), encoding);
     });
   }).then((content) => {
     self.systemDict = self.parseData(content);
@@ -146,13 +147,11 @@ Dictionary.prototype.reloadSystemDictionary = function(logger) {
   request(window.TEMPORARY, 50 * 1024 * 1024, this.doUpdate.bind(this));
 };
 
-Dictionary.prototype.setSystemDictionaryUrl = function(dictionary_url, compression_format, encoding) {
-  localStorage.setItem('system-dictionary-url', dictionary_url);
-  localStorage.setItem('system-dictionary-compression-format', compression_format);
-  localStorage.setItem('system-dictionary-encoding', encoding);
-  this.dictionary_url = dictionary_url;
-  this.dictionary_compression_format = compression_format;
-  this.dictionary_encoding = encoding;
+Dictionary.prototype.setSystemDictionaryUrl = function(param) {
+  localStorage.setItem('system-dictionary-url', param.url);
+  localStorage.setItem('system-dictionary-compression-format', param.compression);
+  localStorage.setItem('system-dictionary-encoding', param.encoding);
+  this.systemDictParam = param;
 };
 
 Dictionary.prototype.syncUserDictionary = function() {

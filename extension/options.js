@@ -1,4 +1,4 @@
-var compression_formats = [['gzip', 'gz'], ['none', '']];
+var compressions = [['gzip', 'gz'], ['none', '']];
 var encodings = [['EUC-JP', 'euc-jp'], ['UTF-8', 'utf-8']];
 
 function logger(obj) {
@@ -32,15 +32,19 @@ function onload() {
   var bgPage = chrome.extension.getBackgroundPage();
   var form = document.getElementById('system_dictionary');
   var url_input = document.getElementById('url');
-  var compression_format = document.getElementById('compression_format');
-  buildSelect(compression_format, compression_formats);
+  var compression = document.getElementById('compression');
+  buildSelect(compression, compressions);
   var encoding = document.getElementById('encoding');
   buildSelect(encoding, encodings);
 
   var reload_button = document.getElementById('reload_button');
 
   document.getElementById('reload_button').onclick = function() {
-    bgPage.skk_dictionary.setSystemDictionaryUrl(url_input.value, compression_format.value, encoding.value);
+    bgPage.skk_dictionary.setSystemDictionaryUrl({
+      url: url_input.value,
+      compression: compression.value,
+      encoding: encoding.value
+    });
     form.disabled = 'disabled';
     reload_button.disabled = 'disabled';
     bgPage.skk_dictionary.reloadSystemDictionary(logger);
