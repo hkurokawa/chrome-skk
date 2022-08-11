@@ -16,7 +16,6 @@ function Dictionary() {
       self.reloadSystemDictionary();
     }
   });
-  this.logger = null;
   this.initSystemDictionary();
 }
 
@@ -89,9 +88,7 @@ Dictionary.prototype.parseData = function(data) {
 
 Dictionary.prototype.log = function(obj) {
   console.log(obj);
-  if (this.logger) {
-    this.logger(obj);
-  }
+  chrome.runtime.sendMessage(obj);
 };
 
 Dictionary.prototype.doUpdate = function() {
@@ -132,12 +129,10 @@ Dictionary.prototype.doUpdate = function() {
     self.log({'status':'parsed'});
     chrome.storage.local.set({ systemDict });
     self.log({'status':'written'});
-    self.logger = null;
   });
 };
 
-Dictionary.prototype.reloadSystemDictionary = function(logger) {
-  this.logger = logger;
+Dictionary.prototype.reloadSystemDictionary = function() {
   this.doUpdate();
 };
 
