@@ -42,4 +42,22 @@ function onload() {
   };
 }
 
+function onReceive(request, sender, sendResponse) {
+  var div = document.getElementById('reloading_message');
+  div.innerHTML = '';
+  if (request.status == 'written') {
+    div.style.display = 'none';
+    document.getElementById('system_dictionary').disabled = '';
+    document.getElementById('reload_button').disabled = '';
+    return;
+  }
+  div.style.display = 'block';
+  div.appendChild(document.createTextNode(request.status));
+  if (request.status == 'parsing') {
+    div.appendChild(
+      document.createTextNode(': ' + request.progress + '/' + request.total));
+  }
+}
+
 window.addEventListener('load', onload);
+chrome.runtime.onMessage.addListener(onReceive);
