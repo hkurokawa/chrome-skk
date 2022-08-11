@@ -36,9 +36,24 @@ function onload() {
         encoding: encoding_input.value
       }
     };
-    chrome.storage.sync.set({ options });
-    form.disabled = 'disabled';
-    reload_button.disabled = 'disabled';
+    // chrome storage API does not emit an event when the value is unchanged
+    // Check the currently stored value to make sure the button is not disabled forever
+    function isEqual(obj1, obj2) {
+      var props = Object.getOwnPropertyNames(obj1);
+      var props2 = Object.getOwnPropertyNames(obj2);
+      if (props.length !== props2.length) return false;
+      for (var i = 0; i < props.length; i++) if (obj1[props[i]] !== obj2[props[i]]) return false;
+      return true;
+    }
+    chrome.storage.sync.get('options', (data) => {
+      if (data.options && isEqual(data.options.system_dictionary, options.system_dictionary)) {
+        console.log('The system dictionary parameters are unchanged. Do nothing.');
+        return;
+      }
+      chrome.storage.sync.set({ options });
+      form.disabled = 'disabled';
+      reload_button.disabled = 'disabled';
+    });
   };
 }
 
