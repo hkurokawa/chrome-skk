@@ -72,5 +72,5 @@ function initRomanTable() {
   }
 }
 
-chrome.runtime.onInstalled.addListener(initRomanTable);
+initRomanTable();
 })();
