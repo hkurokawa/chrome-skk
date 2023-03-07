@@ -32,7 +32,12 @@ SKK.registerMode('full-ascii', {
   keyHandler: createAsciiLikeMode(function(skk, key) {
     var c = key.charCodeAt(0);
     if (c >= 0x20 && c < 0x7f) {
-      skk.commitText(String.fromCharCode(c + 0xfee0));
+      if (c == 0x20) {
+        c = 0x3000; // IDEOGRAPHIC SPACE
+      } else {
+        c += 0xfee0;
+      }
+      skk.commitText(String.fromCharCode(c));
       return true;
     }
     return false;
