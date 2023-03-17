@@ -17,6 +17,7 @@ build: 3rd-party-licenses.txt
 	$(ZIP) ../$(DIST)/$(PACKAGE_NAME)-$(PACKAGE_VERSION).zip -j ../LICENSE; \
 	cp $(MANIFEST) ../$(DIST); \
 	sed -i 's/ (dev)//g' ../$(DIST)/$(MANIFEST); \
+	sed -i 's/.dev"/"/g' ../$(DIST)/$(MANIFEST); \
 	$(ZIP) ../$(DIST)/$(PACKAGE_NAME)-$(PACKAGE_VERSION).zip -j ../$(DIST)/$(MANIFEST); \
 	rm -f ../$(DIST)/$(MANIFEST);
 
