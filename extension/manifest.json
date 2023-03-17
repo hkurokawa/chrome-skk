@@ -11,21 +11,21 @@
     {
       "name": "SKK (dev)(for US keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.us.dev",
+      "id": "net.hydrakecat.skk.us.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["us"]
     },{
       "name": "SKK (dev)(for Japanese keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.jp.dev",
+      "id": "net.hydrakecat.skk.jp.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["jp"]
     },{
       "name": "SKK (dev)(for Dvorak keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.dvorak.dev",
+      "id": "net.hydrakecat.skk.dvorak.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["us-dvorak"]
