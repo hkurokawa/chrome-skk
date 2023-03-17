@@ -1,5 +1,5 @@
 {
-  "name": "SKK Japanese Input",
+  "name": "SKK Japanese Input (dev)",
   "version": "1.0.0",
   "manifest_version": 3,
   "description": "SKK implementation for ChromeOS Input Method API",
