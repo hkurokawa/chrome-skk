@@ -9,23 +9,23 @@
   "options_page": "options.html",
   "input_components": [
     {
-      "name": "SKK(for US keyboard)",
+      "name": "SKK (dev)(for US keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.us",
+      "id": "org.jmuk.skk.us.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["us"]
     },{
-      "name": "SKK(for Japanese keyboard)",
+      "name": "SKK (dev)(for Japanese keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.jp",
+      "id": "org.jmuk.skk.jp.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["jp"]
     },{
-      "name": "SKK(for Dvorak keyboard)",
+      "name": "SKK (dev)(for Dvorak keyboard)",
       "type": "ime",
-      "id": "org.jmuk.skk.dvorak",
+      "id": "org.jmuk.skk.dvorak.dev",
       "description": "An SKK clone",
       "language": "ja",
       "layouts": ["us-dvorak"]
