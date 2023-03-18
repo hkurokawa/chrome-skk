@@ -17,6 +17,7 @@ function Dictionary() {
     }
   });
   this.initSystemDictionary();
+  this.initUserDictionary();
 }
 
 (function() {
@@ -145,10 +146,20 @@ Dictionary.prototype.initSystemDictionary = function() {
   var self = this;
   chrome.storage.local.get('systemDict', (data) => {
     if (data.systemDict) {
-      self.log({'status':'loaded_from_storage', dict_size: data.systemDict.length});
+      self.log({'status':'loaded_system_dict_from_storage', dict_size: Object.keys(data.systemDict).length});
       self.systemDict = data.systemDict;
     } else {
       self.doUpdate();
+    }
+  });
+};
+
+Dictionary.prototype.initUserDictionary = function() {
+  var self = this;
+  chrome.storage.local.get('userDict', (data) => {
+    if (data.userDict) {
+      self.log({'status':'loaded_user_dict_from_storage', dict_size: Object.keys(data.userDict).length});
+      self.userDict = data.userDict;
     }
   });
 };
