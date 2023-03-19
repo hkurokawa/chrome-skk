@@ -278,6 +278,22 @@ chrome['input'] = {
   }
 };
 
+chrome['storage'] = {
+  sync: {
+    get: (key, callback) => { callback({options: {}}); }
+  },
+  local: {
+    get: (key, callback) => { callback({systemDict: {}, userDict: {}})}
+  },
+  onChanged: {
+    addListener: (listener) => {}
+  },
+};
+
+chrome['runtime'] = {
+  sendMessage: (msg) => {}
+}
+
 var mockEngineId = 'sample';
 var mockContext = {
   textID: 0,
