@@ -13,13 +13,13 @@ function buildSelect(selectElement, options) {
 function onload() {
   var form = document.getElementById('system_dictionary');
   chrome.storage.sync.get('options', (data) => {
-    console.dir({'status': 'loaded saved options', 'data': data});
+    console.dir({ 'status': 'loaded saved options', 'data': data });
     if (data.options && data.options.system_dictionary) {
       form.url.value = data.options.system_dictionary.url;
       form.compression.value = data.options.system_dictionary.compression;
       form.encoding.value = data.options.system_dictionary.encoding;
     }
-  });  
+  });
   var url_input = form.url;
   var compression_input = form.compression;
   buildSelect(compression_input, compressions);
@@ -28,7 +28,7 @@ function onload() {
 
   var reload_button = document.getElementById('reload_button');
 
-  document.getElementById('reload_button').onclick = function() {
+  document.getElementById('reload_button').onclick = function () {
     var options = {
       system_dictionary: {
         url: url_input.value,
@@ -76,6 +76,15 @@ function onReceive(request, sender, sendResponse) {
         div.appendChild(
           document.createTextNode(': ' + body.progress + '/' + body.total));
       }
+      return;
+    case "read_clipboard":
+      (async () => {
+        let text = await navigator.clipboard.readText();
+        chrome.runtime.sendMessage({
+          method: "read_clipboard_response",
+          body: {content: text}
+        });
+      })();
       return;
     default:
       console.log("Unexpected request: " + request.method);
