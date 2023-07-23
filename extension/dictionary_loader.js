@@ -88,8 +88,10 @@ Dictionary.prototype.parseData = function(data) {
 }
 
 Dictionary.prototype.log = function(obj) {
-  console.log(obj);
-  chrome.runtime.sendMessage(obj);
+  chrome.runtime.sendMessage({
+    method: "update_dictionary_load_status",
+    body: obj
+  });
 };
 
 Dictionary.prototype.doUpdate = function() {
