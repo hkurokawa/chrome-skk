@@ -225,6 +225,7 @@ SKK.prototype.createInnerSKK = function() {
   };
 
   inner_skk.getPrefix = function() {
+    // Show ▼ followed by the input text, * and the okuri text
     var prefix_text = '\u25bc' + outer_skk.preedit;
     if (outer_skk.okuriText.length > 0) {
       prefix_text += '*' + outer_skk.okuriText;
@@ -234,6 +235,7 @@ SKK.prototype.createInnerSKK = function() {
     if (outer_skk.okuriText.length > 0) {
       cursor += outer_skk.okuriText.length + 1;
     }
+    // Add 【
     return {text:prefix_text + '\u3010' + this.commit_text, cursor:cursor};
   };
 
@@ -245,6 +247,7 @@ SKK.prototype.createInnerSKK = function() {
     if (args && args.selectionEnd) {
       args.selectionEnd += prefix.text.length;
     }
+    // Show 】 after the current composition
     outer_skk.setComposition(
       prefix.text + text + '\u3011', prefix.cursor, args);
   };
@@ -283,6 +286,18 @@ SKK.prototype.createInnerSKK = function() {
     } else if (keyevent.key == 'Esc' ||
         (keyevent.key == 'g' && keyevent.ctrlKey)) {
       outer_skk.finishInner(false);
+    } else if (keyevent.key == 'y' && keyevent.ctrlKey) {
+      let readClipboardResponseHandler = (request, sender, sendResponse) => {
+        if (request.method === "read_clipboard_response") {
+          chrome.runtime.onMessage.removeListener(readClipboardResponseHandler);
+          let response = request.body;
+          inner_skk.commitText(response.content);
+          // Need to trigger an update since this code runs asynchronously
+          inner_skk.updateComposition();
+        }
+      };
+      chrome.runtime.onMessage.addListener(readClipboardResponseHandler);
+      chrome.runtime.sendMessage({method: "read_clipboard"});
     }
 
     return true;
