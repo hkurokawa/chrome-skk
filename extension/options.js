@@ -57,20 +57,28 @@ function onload() {
   };
 }
 
+// request is supposed to be in {method, body} format.
 function onReceive(request, sender, sendResponse) {
-  var div = document.getElementById('reloading_message');
-  div.innerHTML = '';
-  if (request.status == 'written') {
-    div.style.display = 'none';
-    document.getElementById('system_dictionary').disabled = '';
-    document.getElementById('reload_button').disabled = '';
-    return;
-  }
-  div.style.display = 'block';
-  div.appendChild(document.createTextNode(request.status));
-  if (request.status == 'parsing') {
-    div.appendChild(
-      document.createTextNode(': ' + request.progress + '/' + request.total));
+  switch (request.method) {
+    case "update_dictionary_load_status":
+      let body = request.body;
+      var div = document.getElementById('reloading_message');
+      div.innerHTML = '';
+      if (body.status == 'written') {
+        div.style.display = 'none';
+        document.getElementById('system_dictionary').disabled = '';
+        document.getElementById('reload_button').disabled = '';
+        return;
+      }
+      div.style.display = 'block';
+      div.appendChild(document.createTextNode(body.status));
+      if (body.status == 'parsing') {
+        div.appendChild(
+          document.createTextNode(': ' + body.progress + '/' + body.total));
+      }
+      return;
+    default:
+      console.log("Unexpected request: " + request.method);
   }
 }
 
