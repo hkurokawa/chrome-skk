@@ -1,7 +1,6 @@
 var romanTable = {
   a:'\u3042', i:'\u3044', u:'\u3046', e:'\u3048', o:'\u304a',
   xa:'\u3041', xi:'\u3043', xu:'\u3045', xe:'\u3047', xo:'\u3049',
-  ca:'\u304b', ci:'\u304d', cu:'\u304f', ce:'\u3051', co:'\u3053',
   ka:'\u304b', ki:'\u304d', ku:'\u304f', ke:'\u3051', ko:'\u3053',
   ga:'\u304c', gi:'\u304e', gu:'\u3050', ge:'\u3052', go:'\u3054',
   sa:'\u3055', si:'\u3057', su:'\u3059', se:'\u305b', so:'\u305d',
@@ -47,7 +46,9 @@ var katakanaTable = {};
 
 (function() {
 function initRomanTable() {
-  var youons = ['c', 'k', 's', 't', 'n', 'h', 'm', 'r', 'g', 'd', 'b', 'p', 'z'];
+  var youons = ['k', 's', 't', 'n', 'h', 'm', 'r', 'g', 'd', 'b', 'p', 'z'];
+  // Add a mapping from "consonant + prefix + vowel" -> "consonant + i + small vowel"
+  // Ex. tya -> ti + small a, shu -> si + small u
   function addYouon(youon, prefix, base) {
     var mapping = {a:'\u3083', i:'\u3043', u:'\u3085',
                    e:'\u3047', o:'\u3087'};
