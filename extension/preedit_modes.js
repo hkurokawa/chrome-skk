@@ -87,9 +87,6 @@ function preeditInput(skk, keyevent) {
   if (skk.preedit.length > 0 &&
       keyevent.shiftKey && 'A' <= keyevent.key && keyevent.key <= 'Z') {
     var key = keyevent.key.toLowerCase();
-    if (key == 'c') {
-      key = 'k';
-    }
     var okuriPrefix = (skk.roman.length > 0) ? skk.roman[0] : key;
     skk.processRoman(key, romanTable, function(text) {
         if (skk.roman.length > 0) {
