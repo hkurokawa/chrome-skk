@@ -24,6 +24,10 @@ function createRomanInput(table) {
       return true;
     }
 
+    if (keyevent.key == 'j' && keyevent.ctrlKey) {
+      return true;
+    }
+
     if (keyevent.key.length != 1 || keyevent.ctrlKey || keyevent.altKey) {
       return false;
     }
