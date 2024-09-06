@@ -25,10 +25,10 @@ var romanTable = {
   '.': '\u3002', // 。
   '[': '\uff62', // 「
   ']': '\uff63', // 」
-  ' ': '\u3000', // 全角スペース
   '-': '\u30fc', // ー
 
   // The following rule comes from https://github.com/skk-dev/ddskk/blob/8c47f46e38a29a0f3eabcd524268d20573102467/docs/06_apps.rst?plain=1#L2100-L2137
+  'z ': '\u3000', // 全角スペース
   'z0': '\u25cb', // ○
   'z.': '\u2026', // …
   'z,': '\u2025', // ‥
