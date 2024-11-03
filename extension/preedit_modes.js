@@ -55,7 +55,7 @@ function preeditKeybind(skk, keyevent) {
     return true;
   }
 
-  if (keyevent.key == 'q') {
+  if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
     skk.commitText(kanaTurnOver(skk.preedit));
     skk.preedit = '';
     skk.roman = '';
