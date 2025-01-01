@@ -70,6 +70,9 @@ function createRomanInput(table) {
           skk.caret += text.length;
         });
       return true;
+    } else if (keyevent.key == '!' || keyevent.key == '?') {
+      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
+      return true;
     }
 
     return false;
