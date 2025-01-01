@@ -219,4 +219,28 @@ Dictionary.prototype.recordNewResult = function(reading, newEntry) {
   this.syncUserDictionary();
 };
 
+Dictionary.prototype.removeUserEntry = function(reading, word) {
+  var userEntries = this.userDict[reading] || [];
+  if (userEntries.length == 0) {
+    return;
+  }
+  var existing_i = -1;
+  for (var i = 0; i < userEntries.length; i++) {
+    if (userEntries[i].word == word) {
+      existing_i = i;
+      break;
+    }
+  }
+  if (existing_i < 0) {
+    return;
+  }
+  userEntries.splice(existing_i, 1);
+  if (userEntries.length > 0) {
+    this.userDict[reading] = userEntries;
+  } else {
+    delete this.userDict[reading];
+  }
+  this.syncUserDictionary();
+};
+
 })();

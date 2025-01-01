@@ -59,6 +59,16 @@ function conversionMode(skk, keyevent) {
     skk.okuriText = '';
     skk.okuriPrefix = '';
     skk.switchMode('preedit');
+  } else if (keyevent.key == 'Shift') {
+    // do nothing
+  } else if (keyevent.key == 'X') {
+    var entry = skk.entries.entries[skk.entries.index];
+    skk.dictionary.removeUserEntry(skk.preedit + skk.okuriPrefix, entry.word);
+    skk.entries = null;
+    skk.preedit += skk.okuriText;
+    skk.okuriText = '';
+    skk.okuriPrefix = '';
+    skk.switchMode('preedit');
   } else {
     var is_commit_key = (
       keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey));
