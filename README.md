@@ -3,6 +3,10 @@ An SKK implementation for ChromeOS IME API.
 
 Chrome OS用SKK IME
 
+# Fork元
+このレポジトリは https://github.com/jmuk/chrome-skk をフォークしたものです。
+@jmukさんのご許可をいただいて、Chrome WebStoreにて公開しております。
+
 # インストール方法
 Web Store から、もしくは手動でインストールできます。
 
