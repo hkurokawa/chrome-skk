@@ -9,10 +9,7 @@ importScripts("pako_inflate.es5.min.js");
 importScripts("main.js");
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.method === "reload_extension") {
-    chrome.runtime.reload();
-    sendResponse(); // レスポンスを返す
-  } else if (request.method === "read_clipboard") {
+  if (request.method === "read_clipboard") {
     // クリップボードからテキストを読み取る
     navigator.clipboard.readText()
       .then(text => {

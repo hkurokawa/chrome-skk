@@ -27,6 +27,13 @@ function SKK(engineID, dictionary) {
       this.enableSandS = data.options.enable_sands;
     }
   });
+
+  // Listen for changes to SandS mode setting
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && changes.options && typeof changes.options.newValue.enable_sands !== 'undefined') {
+      this.enableSandS = changes.options.newValue.enable_sands;
+    }
+  });
 }
 
 // キーボードレイアウトに応じたシフトキー変換
