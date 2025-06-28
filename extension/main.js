@@ -24,7 +24,7 @@ chrome.input.ime.onFocus.addListener(function(context) {
 });
 
 chrome.input.ime.onKeyEvent.addListener(function(engineID, keyData) {
-  if (keyData.type != 'keydown') {
+  if (keyData.type != 'keydown' && keyData.type != 'keyup') {
     return false;
   }
 
