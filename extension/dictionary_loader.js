@@ -91,6 +91,11 @@ Dictionary.prototype.log = function(obj) {
   chrome.runtime.sendMessage({
     method: "update_dictionary_load_status",
     body: obj
+  }, function() {
+    if (chrome.runtime.lastError) {
+      // Ignore the error if no receiver is found (options page not open)
+      console.log("Ignoring message send error: " + chrome.runtime.lastError.message);
+    }
   });
 };
 

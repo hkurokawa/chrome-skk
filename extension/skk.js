@@ -348,17 +348,16 @@ SKK.prototype.createInnerSKK = function() {
         (keyevent.key == 'g' && keyevent.ctrlKey)) {
       outer_skk.finishInner(false);
     } else if (keyevent.key == 'y' && keyevent.ctrlKey) {
-      let readClipboardResponseHandler = (request, sender, sendResponse) => {
-        if (request.method === "read_clipboard_response") {
-          chrome.runtime.onMessage.removeListener(readClipboardResponseHandler);
-          let response = request.body;
-          inner_skk.commitText(response.content);
-          // Need to trigger an update since this code runs asynchronously
-          inner_skk.updateComposition();
+      chrome.runtime.sendMessage(
+        {method: "read_clipboard"},
+        (response) => {
+          if (response && response.method === "read_clipboard_response") {
+            inner_skk.commitText(response.body.content);
+            inner_skk.updateComposition();
+          }
         }
-      };
-      chrome.runtime.onMessage.addListener(readClipboardResponseHandler);
-      chrome.runtime.sendMessage({method: "read_clipboard"});
+      );
+      return true;
     }
 
     return true;

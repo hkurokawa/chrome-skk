@@ -96,15 +96,6 @@ function onReceive(request, sender, sendResponse) {
           document.createTextNode(': ' + body.progress + '/' + body.total));
       }
       return;
-    case "read_clipboard":
-      (async () => {
-        let text = await navigator.clipboard.readText();
-        chrome.runtime.sendMessage({
-          method: "read_clipboard_response",
-          body: {content: text}
-        });
-      })();
-      return;
     default:
       console.log("Unexpected request: " + request.method);
   }
