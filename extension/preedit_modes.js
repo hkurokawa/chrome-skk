@@ -8,16 +8,16 @@ function updateComposition(skk) {
 
 function initPreedit(skk) {
   skk.caret = skk.preedit.length;
-  // SandS状態をリセット
-  if (skk.isSandSActive !== undefined) {
-    skk.isSandSActive = false;
-  }
+  // SandS状態を初期化 (roman_mode.js と同様)
+  skk.isSandSActive = false;
+  skk.keyPressedDuringSandS = false;
 }
 
 function preeditKeybind(skk, keyevent) {
-  // keyupイベントは無視
+  // keyupイベントは上位で処理されるため無視
   if (keyevent.type === 'keyup') return false;
 
+  // 既存のキーバインド処理は変更なし
   if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
     skk.commitText(skk.preedit);
     skk.preedit = '';
@@ -90,15 +90,44 @@ function preeditKeybind(skk, keyevent) {
 }
 
 function preeditInput(skk, keyevent) {
-  // keyupイベントは無視
-  if (keyevent.type === 'keyup') return false;
-
-  // SandS状態をリセット
-  if (skk.isSandSActive !== undefined) {
-    skk.isSandSActive = false;
+  // Romanモードと同様のSandS keyup処理
+  if (keyevent.type === 'keyup') {
+    if (keyevent.key === ' ' && skk.isSandSActive) {
+      if (!skk.keyPressedDuringSandS) {
+        // 変換モードに遷移
+        if (skk.roman == 'n') {
+          skk.preedit += romanTable['nn'];
+        }
+        skk.roman = '';
+        skk.switchMode('conversion');
+      }
+      skk.isSandSActive = false;
+      skk.keyPressedDuringSandS = false;
+      return true;
+    }
+    return false;
   }
 
-  if (keyevent.key == ' ') {
+  // Romanモードと同様のSandS keydown処理
+  if (keyevent.key !== ' ' && skk.isSandSActive) {
+    skk.keyPressedDuringSandS = true;
+  }
+
+  // Ctrl+Space処理 (roman_mode.jsと同様)
+  if (keyevent.key === ' ' && keyevent.ctrlKey) {
+    skk.isSandSActive = false;
+    return false;
+  }
+
+  // Spaceキー処理 (roman_mode.jsと同様)
+  if (keyevent.key === ' ') {
+    if (skk.enableSandS && !keyevent.shiftKey) {
+      skk.isSandSActive = true;
+      skk.keyPressedDuringSandS = false;
+      updateComposition(skk);
+      return true;
+    }
+    // SandS無効時のデフォルト動作
     if (skk.roman == 'n') {
       skk.preedit += romanTable['nn'];
     }
@@ -107,18 +136,32 @@ function preeditInput(skk, keyevent) {
     return true;
   }
 
+  // 物理シフト + Spaceの競合処理
+  if (keyevent.key === ' ' && keyevent.shiftKey) {
+    skk.isSandSActive = false;
+  }
+
+  // Romanモードと同様の仮想シフト処理
+  let processedKey = keyevent.key;
+  let isVirtualShift = false;
+  if (skk.isSandSActive && !keyevent.shiftKey) {
+    processedKey = skk.getShiftedKey(keyevent.key);
+    isVirtualShift = true;
+    skk.keyPressedDuringSandS = true;
+  }
+
+  // 既存のキーバインド処理
   if (preeditKeybind(skk, keyevent)) {
     return true;
   }
 
-  if (keyevent.key.length != 1) {
-    // special keys -- ignore for now
-    return false;
-  }
+  // シフト状態を判定 (物理/仮想)
+  const shiftApplied = keyevent.shiftKey || isVirtualShift;
 
-  if (skk.preedit.length > 0 &&
-      keyevent.shiftKey && 'A' <= keyevent.key && keyevent.key <= 'Z') {
-    var key = keyevent.key.toLowerCase();
+  // 送り仮名処理 (シフト状態を考慮)
+  if (skk.preedit.length > 0 && shiftApplied &&
+      'A' <= processedKey && processedKey <= 'Z') {
+    var key = processedKey.toLowerCase();
     var okuriPrefix = (skk.roman.length > 0) ? skk.roman[0] : key;
     skk.processRoman(key, romanTable, function(text) {
         if (skk.roman.length > 0) {
@@ -131,30 +174,28 @@ function preeditInput(skk, keyevent) {
         }
       });
     if (skk.currentMode == 'preedit') {
-      // We should re-calculate the okuriPrefix since the 'roman' can be
-      // changed during processRoman -- such like 'KanJi' pattern.
       skk.okuriPrefix = (skk.roman.length > 0) ? skk.roman[0] : key;
       skk.switchMode('okuri-preedit');
     }
     return true;
   }
 
-  var processed = skk.processRoman(keyevent.key.toLowerCase(), romanTable,
+  // ローマ字変換処理
+  var processed = skk.processRoman(processedKey.toLowerCase(), romanTable,
                                    function(text) {
       skk.preedit = skk.preedit.slice(0, skk.caret) +
         text + skk.preedit.slice(skk.caret);
       skk.caret += text.length;
     });
 
-  if (skk.preedit.length > 0 && keyevent.key == '>') {
+  if (skk.preedit.length > 0 && processedKey == '>') {
     skk.roman = '';
     skk.preedit += '>';
     skk.switchMode('conversion');
   } else if (!processed) {
-    console.log(keyevent);
     skk.preedit = skk.preedit.slice(0, skk.caret) +
-      keyevent.key + skk.preedit.slice(skk.caret);
-    skk.caret += keyevent.key.length;
+      processedKey + skk.preedit.slice(skk.caret);
+    skk.caret += processedKey.length;
   }
   return true;
 }
@@ -167,13 +208,13 @@ function updateOkuriComposition(skk) {
 }
 
 function okuriPreeditInput(skk, keyevent) {
-  // keyupイベントは無視
-  if (keyevent.type === 'keyup') return false;
-
   // SandS状態をリセット
-  if (skk.isSandSActive !== undefined) {
+  if (skk.isSandSActive) {
     skk.isSandSActive = false;
   }
+
+  // 既存の処理は変更なし
+  if (keyevent.type === 'keyup') return false;
 
   if (keyevent.key == 'Enter') {
     skk.commitText(skk.preedit);
@@ -202,7 +243,6 @@ function okuriPreeditInput(skk, keyevent) {
     }
   }
 
-  // keydownイベントのみ処理
   if (keyevent.type === 'keydown') {
     skk.processRoman(keyevent.key.toLowerCase(), romanTable, function(text) {
       skk.okuriText += text;
@@ -216,13 +256,13 @@ function okuriPreeditInput(skk, keyevent) {
 }
 
 function asciiPreeditInput(skk, keyevent) {
-  // keyupイベントは無視
-  if (keyevent.type === 'keyup') return false;
-
   // SandS状態をリセット
-  if (skk.isSandSActive !== undefined) {
+  if (skk.isSandSActive) {
     skk.isSandSActive = false;
   }
+
+  // 既存の処理は変更なし
+  if (keyevent.type === 'keyup') return false;
 
   if (keyevent.key == ' ') {
     skk.switchMode('conversion');
@@ -237,7 +277,6 @@ function asciiPreeditInput(skk, keyevent) {
     return true;
   }
 
-  // keydownイベントのみ処理
   if (keyevent.type === 'keydown') {
     skk.preedit += keyevent.key;
     skk.caret++;
@@ -278,7 +317,6 @@ function kanaTurnOver(str) {
   return turnedOverStr;
 }
 })();
-
 // (function() {
 // function updateComposition(skk) {
 //   var preedit = '\u25bd' + skk.preedit.slice(0, skk.caret) + skk.roman +
