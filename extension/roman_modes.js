@@ -33,46 +33,54 @@ function createRomanInput(table) {
     }
 
     if (!keyevent.shiftKey) {
-      if (skk.processRoman(keyevent.key, table, skk.commitText.bind(skk))) {
-        return true;
-      }
+      if (skk.enableSandS && keyevent.key == ' ') {
+        // If SandS mode is enabled and space is pressed, treat it as shift.
+        // Fall through to the shiftKey handling below.
+      } else {
+        if (skk.processRoman(keyevent.key, table, skk.commitText.bind(skk))) {
+          return true;
+        }
 
-      if (keyevent.key == 'q') {
-        skk.switchMode(
-          (skk.currentMode == 'hiragana') ? 'katakana' : 'hiragana');
-        return true;
-      }
-      if (keyevent.key == 'l') {
-        skk.switchMode('ascii');
-        return true;
-      }
+        if (keyevent.key == 'q') {
+          skk.switchMode(
+            (skk.currentMode == 'hiragana') ? 'katakana' : 'hiragana');
+          return true;
+        }
+        if (keyevent.key == 'l') {
+          skk.switchMode('ascii');
+          return true;
+        }
 
-      if (keyevent.key == '/') {
-        skk.switchMode('ascii-preedit');
+        if (keyevent.key == '/') {
+          skk.switchMode('ascii-preedit');
+          return true;
+        }
+      }
+    } 
+    
+    if (keyevent.shiftKey || (skk.enableSandS && keyevent.key == ' ')) { // Add this condition
+      if (keyevent.key == 'Q') {
+        console.log('here');
+        skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
+        skk.switchMode('preedit');
+        return true;
+      } else if (keyevent.key == 'L') {
+        skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
+        skk.switchMode('full-ascii');
+        return true;
+      } else if (keyevent.key >= 'A' && keyevent.key <= 'Z') {
+        skk.switchMode('preedit');
+        skk.processRoman(
+          keyevent.key.toLowerCase(), romanTable, function(text) {
+            skk.preedit = skk.preedit.slice(0, skk.caret) +
+              text + skk.preedit.slice(skk.caret);
+            skk.caret += text.length;
+          });
+        return true;
+      } else if (keyevent.key == '!' || keyevent.key == '?') {
+        skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
         return true;
       }
-    } else if (keyevent.key == 'Q') {
-      console.log('here');
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      skk.switchMode('preedit');
-      return true;
-    } else if (keyevent.key == 'L') {
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      skk.switchMode('full-ascii');
-      return true;
-    } else if (keyevent.shiftKey &&
-               keyevent.key >= 'A' && keyevent.key <= 'Z') {
-      skk.switchMode('preedit');
-      skk.processRoman(
-        keyevent.key.toLowerCase(), romanTable, function(text) {
-          skk.preedit = skk.preedit.slice(0, skk.caret) +
-            text + skk.preedit.slice(skk.caret);
-          skk.caret += text.length;
-        });
-      return true;
-    } else if (keyevent.key == '!' || keyevent.key == '?') {
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      return true;
     }
 
     return false;

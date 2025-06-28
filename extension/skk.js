@@ -10,6 +10,14 @@ function SKK(engineID, dictionary) {
   this.caret = null;
   this.entries = null;
   this.dictionary = dictionary;
+  this.enableSandS = false; // Add this line
+
+  // Load SandS mode setting
+  chrome.storage.sync.get('options', (data) => {
+    if (data.options && typeof data.options.enable_sands !== 'undefined') {
+      this.enableSandS = data.options.enable_sands;
+    }
+  });
 }
 
 SKK.prototype.commitText = function(text) {

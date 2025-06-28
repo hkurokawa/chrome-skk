@@ -27,6 +27,22 @@ function onload() {
   buildSelect(encoding_input, encodings);
 
   var reload_button = document.getElementById('reload_button');
+  var sands_form = document.getElementById('sands_mode');
+  var enable_sands_checkbox = sands_form.enable_sands;
+
+  chrome.storage.sync.get('options', (data) => {
+    console.dir({ 'status': 'loaded saved options', 'data': data });
+    if (data.options) {
+      if (data.options.system_dictionary) {
+        form.url.value = data.options.system_dictionary.url;
+        form.compression.value = data.options.system_dictionary.compression;
+        form.encoding.value = data.options.system_dictionary.encoding;
+      }
+      if (typeof data.options.enable_sands !== 'undefined') {
+        enable_sands_checkbox.checked = data.options.enable_sands;
+      }
+    }
+  });
 
   document.getElementById('reload_button').onclick = function () {
     var options = {
@@ -34,7 +50,8 @@ function onload() {
         url: url_input.value,
         compression: compression_input.value,
         encoding: encoding_input.value
-      }
+      },
+      enable_sands: enable_sands_checkbox.checked
     };
     // chrome storage API does not emit an event when the value is unchanged
     // Check the currently stored value to make sure the button is not disabled forever
@@ -46,11 +63,13 @@ function onload() {
       return true;
     }
     chrome.storage.sync.get('options', (data) => {
-      if (data.options && isEqual(data.options.system_dictionary, options.system_dictionary)) {
-        console.log('The system dictionary parameters are unchanged. Do nothing.');
+      if (data.options && isEqual(data.options, options)) { // Compare the entire options object
+        console.log('The options are unchanged. Do nothing.');
         return;
       }
-      chrome.storage.sync.set({ options });
+      chrome.storage.sync.set({ options }, () => {
+        chrome.runtime.sendMessage({ method: "reload_extension" });
+      });
       form.disabled = 'disabled';
       reload_button.disabled = 'disabled';
     });
