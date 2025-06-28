@@ -35,6 +35,14 @@ function createRomanInput(table) {
       skk.keyPressedDuringSandS = true;
     }
 
+    // Ctrl+Spaceの処理
+    if (keyevent.key === ' ' && keyevent.ctrlKey) {
+      // IMEのデフォルト動作に任せる
+      skk.isSandSActive = false; // SandS状態をリセット
+      skk.roman = ''; // ローマ字入力をリセット
+      return false; // イベントを消費せず、IMEのデフォルト動作に任せる
+    }
+
     // Spaceキー処理 (SandS対応)
     if (keyevent.key === ' ') {
       if (skk.enableSandS && !keyevent.shiftKey) {
