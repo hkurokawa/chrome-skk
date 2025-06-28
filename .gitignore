@@ -2,3 +2,4 @@ node_modules
 dist
 3rd-party-licenses.txt
 extension/pako_inflate.es5.min.js
+yarn.lock
