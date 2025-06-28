@@ -1,9 +1,9 @@
 (function() {
 function updateComposition(skk) {
-  if (skk.roman.length > 0) {
+  if (skk.isSandSActive) {
+    skk.setComposition(skk.roman + " [S]", skk.roman.length);
+  } else if (skk.roman.length > 0) {
     skk.setComposition(skk.roman, skk.roman.length);
-  } else if (skk.isSandSActive) {
-    skk.setComposition(" [S]", 0); // SandS状態表示
   } else {
     skk.clearComposition();
   }
@@ -11,49 +11,71 @@ function updateComposition(skk) {
 
 function createRomanInput(table) {
   return function (skk, keyevent) {
-    // SandS状態解除トリガー (Space以外のキー)
+    // keyupイベント処理: Spaceキーのみ特別扱い
+    if (keyevent.type === 'keyup') {
+      if (keyevent.key === ' ' && skk.isSandSActive) {
+        // SandS状態でSpaceキーが離された場合
+        if (!skk.keyPressedDuringSandS) {
+          skk.commitText(' '); // スペース入力
+        }
+        skk.isSandSActive = false;
+        skk.keyPressedDuringSandS = false;
+        updateComposition(skk);
+        return true;
+      }
+      // その他のkeyupイベントは無視
+      return false;
+    }
+
+    // keydownイベント処理のみ以下で実行
+    // ============================================
+
+    // SandS状態リセット: Space以外のキーが押されたらフラグ設定
     if (keyevent.key !== ' ' && skk.isSandSActive) {
-      skk.isSandSActive = false;
+      skk.keyPressedDuringSandS = true;
     }
 
     // Spaceキー処理 (SandS対応)
     if (keyevent.key === ' ') {
       if (skk.enableSandS && !keyevent.shiftKey) {
-        skk.isSandSActive = true;
-        updateComposition(skk); // 状態表示更新
+        skk.isSandSActive = true; // 仮想シフト状態をON
+        skk.keyPressedDuringSandS = false; // リセット
+        updateComposition(skk);
         return true;
       }
-      // 通常のスペース処理
+      // SandS無効時は即時スペース入力
       skk.commitText(' ');
       return true;
     }
 
-    // SandS仮想シフト処理
-    if (skk.isSandSActive && !keyevent.shiftKey) {
-      // 仮想シフト状態で処理
-      const virtualShiftEvent = {
-        ...keyevent,
-        shiftKey: true
-      };
-      skk.isSandSActive = false; // 状態リセット
-      return this(skk, virtualShiftEvent); // 再帰処理
+    // 物理シフト + Spaceの競合処理
+    if (keyevent.key === ' ' && keyevent.shiftKey) {
+      skk.isSandSActive = false; // 物理シフト優先
     }
 
-    // 既存のキー処理
+    // SandS仮想シフト処理: キーをシフト変換
+    let processedKey = keyevent.key;
+    let isVirtualShift = false;
+    if (skk.isSandSActive && !keyevent.shiftKey) {
+      processedKey = skk.getShiftedKey(keyevent.key);
+      isVirtualShift = true;
+      skk.keyPressedDuringSandS = true;
+    }
+
+    // 既存の処理 ============================================
     if (keyevent.key == 'Enter') {
       return false;
     }
 
     if (keyevent.key == 'Backspace' && skk.roman.length > 0) {
       skk.roman = skk.roman.slice(0, skk.roman.length - 1);
-      skk.isSandSActive = false; // SandS状態解除
       return true;
     }
 
     if ((keyevent.key == 'Esc' ||
         (keyevent.key == 'g' && keyevent.ctrlKey)) && skk.roman.length > 0) {
       skk.roman = '';
-      skk.isSandSActive = false; // SandS状態解除
+      skk.isSandSActive = false; // 状態リセット
       return true;
     }
 
@@ -65,73 +87,86 @@ function createRomanInput(table) {
       return false;
     }
 
-    if (!keyevent.shiftKey) {
-      if (skk.processRoman(keyevent.key, table, skk.commitText.bind(skk))) {
-        skk.isSandSActive = false; // 変換成功時はSandS解除
-        return true;
-      }
+    // シフト状態を考慮したキー処理
+    const shiftApplied = isVirtualShift || keyevent.shiftKey;
 
-      if (keyevent.key == 'q') {
+    // ローマ字変換処理
+    if (skk.processRoman(processedKey, table, skk.commitText.bind(skk))) {
+      return true;
+    }
+
+    // シフトキーが押されていない場合のモード切替
+    if (!shiftApplied) {
+      if (processedKey == 'q') {
         skk.switchMode(
           (skk.currentMode == 'hiragana') ? 'katakana' : 'hiragana');
-        skk.isSandSActive = false; // モード切替時は解除
+        skk.isSandSActive = false;
         return true;
       }
-      if (keyevent.key == 'l') {
+      if (processedKey == 'l') {
         skk.switchMode('ascii');
-        skk.isSandSActive = false; // モード切替時は解除
+        skk.isSandSActive = false;
         return true;
       }
-
-      if (keyevent.key == '/') {
+      if (processedKey == '/') {
         skk.switchMode('ascii-preedit');
-        skk.isSandSActive = false; // モード切替時は解除
+        skk.isSandSActive = false;
         return true;
       }
-    } else if (keyevent.key == 'Q') {
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      skk.switchMode('preedit');
-      skk.isSandSActive = false; // モード切替時は解除
-      return true;
-    } else if (keyevent.key == 'L') {
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      skk.switchMode('full-ascii');
-      skk.isSandSActive = false; // モード切替時は解除
-      return true;
-    } else if (keyevent.shiftKey &&
-               keyevent.key >= 'A' && keyevent.key <= 'Z') {
-      skk.switchMode('preedit');
-      skk.processRoman(
-        keyevent.key.toLowerCase(), romanTable, function(text) {
-          skk.preedit = skk.preedit.slice(0, skk.caret) +
-            text + skk.preedit.slice(skk.caret);
-          skk.caret += text.length;
-        });
-      skk.isSandSActive = false; // モード切替時は解除
-      return true;
-    } else if (keyevent.key == '!' || keyevent.key == '?') {
-      skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
-      skk.isSandSActive = false; // 変換成功時は解除
-      return true;
+    }
+    // シフトキーが押されている場合の処理
+    else {
+      if (processedKey == 'Q') {
+        skk.processRoman(processedKey, table, skk.commitText.bind(skk));
+        skk.switchMode('preedit');
+        skk.isSandSActive = false;
+        return true;
+      } else if (processedKey == 'L') {
+        skk.processRoman(processedKey, table, skk.commitText.bind(skk));
+        skk.switchMode('full-ascii');
+        skk.isSandSActive = false;
+        return true;
+      } else if (processedKey >= 'A' && processedKey <= 'Z') {
+        skk.switchMode('preedit');
+        skk.processRoman(
+          processedKey.toLowerCase(), romanTable, function(text) {
+            skk.preedit = skk.preedit.slice(0, skk.caret) +
+              text + skk.preedit.slice(skk.caret);
+            skk.caret += text.length;
+          });
+        skk.isSandSActive = false;
+        return true;
+      } else if (processedKey == '!' || processedKey == '?') {
+        skk.processRoman(processedKey, table, skk.commitText.bind(skk));
+        return true;
+      }
     }
 
     return false;
   };
 }
 
+// SandS対応初期化
+const initSandS = function(skk) {
+  skk.isSandSActive = false;
+  skk.keyPressedDuringSandS = false;
+  skk.enableSandS = true; // デフォルトで有効（設定可能）
+};
+
 SKK.registerMode('hiragana', {
   displayName: '\u3072\u3089\u304c\u306a',
   keyHandler: createRomanInput(romanTable),
-  compositionHandler: updateComposition
+  compositionHandler: updateComposition,
+  init: initSandS
 });
 
 SKK.registerMode('katakana', {
   displayName: '\u30ab\u30bf\u30ab\u30ca',
   keyHandler: createRomanInput(katakanaTable),
-  compositionHandler: updateComposition
+  compositionHandler: updateComposition,
+  init: initSandS
 });
 })();
-
 // (function() {
 // function updateComposition(skk) {
 //   if (skk.roman.length > 0) {

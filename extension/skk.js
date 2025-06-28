@@ -347,3 +347,4 @@ SKK.prototype.finishInner = function(successfully) {
     this.switchMode(this.previousMode);
   }
 };
+
