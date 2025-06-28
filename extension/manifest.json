@@ -34,6 +34,7 @@
   "permissions": [
     "input",
     "storage",
-    "unlimitedStorage"
+    "unlimitedStorage",
+    "clipboardRead"
   ]
 }

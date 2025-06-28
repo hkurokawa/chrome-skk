@@ -12,6 +12,15 @@ function SKK(engineID, dictionary) {
   this.dictionary = dictionary;
   this.enableSandS = false; // Add this line
 
+
+  // キーボードレイアウトを判別
+  this.layout = 'us'; // デフォルト
+  if (engineID.indexOf('.jp.') !== -1) {
+    this.layout = 'jp';
+  } else if (engineID.indexOf('.dvorak.') !== -1) {
+    this.layout = 'dvorak';
+  }
+
   // Load SandS mode setting
   chrome.storage.sync.get('options', (data) => {
     if (data.options && typeof data.options.enable_sands !== 'undefined') {
@@ -19,6 +28,50 @@ function SKK(engineID, dictionary) {
     }
   });
 }
+
+// キーボードレイアウトに応じたシフトキー変換
+SKK.prototype.getShiftedKey = function(key) {
+  // 共通の変換（アルファベットの大文字化）
+  if (key >= 'a' && key <= 'z') {
+    return key.toUpperCase();
+  }
+
+  // レイアウトごとの変換テーブル
+  const shiftMaps = {
+    us: {
+      '1': '!', '2': '@', '3': '#', '4': '$', '5': '%',
+      '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+      '-': '_', '=': '+', '[': '{', ']': '}', '\\': '|',
+      ';': ':', "'": '"', ',': '<', '.': '>', '/': '?',
+      '`': '~'
+    },
+    jp: {
+      '1': '!', '2': '"', '3': '#', '4': '$', '5': '%',
+      '6': '&', '7': "'", '8': '(', '9': ')', '0': '_',
+      '-': '=', '^': '~', '\\': '|', '@': '`', '[': '{',
+      ']': '}', ';': '+', ':': '*', ',': '<', '.': '>',
+      '/': '?', '_': '\\'
+    },
+    dvorak: {
+      '1': '!', '2': '@', '3': '#', '4': '$', '5': '%',
+      '6': '^', '7': '&', '8': '*', '9': '(', '0': ')',
+      '[': '{', ']': '}', "'": '"', ',': '<', '.': '>',
+      ';': ':', '/': '?', '=': '+', '-': '_', '`': '~',
+      '\\': '|'
+    }
+  };
+
+  // 現在のレイアウトの変換テーブルを取得
+  const shiftMap = shiftMaps[this.layout];
+
+  // 変換テーブルに存在するキーは変換
+  if (shiftMap && shiftMap.hasOwnProperty(key)) {
+    return shiftMap[key];
+  }
+
+  // 変換できないキーはそのまま返す
+  return key;
+};
 
 SKK.prototype.commitText = function(text) {
   chrome.input.ime.commitText({contextID:this.context, text:text});
