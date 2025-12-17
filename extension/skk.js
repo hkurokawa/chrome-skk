@@ -10,6 +10,7 @@ function SKK(engineID, dictionary) {
   this.caret = null;
   this.entries = null;
   this.dictionary = dictionary;
+  this.timeout = null;
 }
 
 SKK.prototype.commitText = function(text) {
@@ -152,6 +153,7 @@ SKK.prototype.switchMode = function(newMode) {
 
   this.previousMode = this.currentMode;
   this.currentMode = newMode;
+  this.showStatus();
   var initHandler = this.modes[this.currentMode].initHandler;
   if (initHandler) {
     initHandler(this);
@@ -338,4 +340,38 @@ SKK.prototype.finishInner = function(successfully) {
     this.okuriPrefix = '';
     this.switchMode(this.previousMode);
   }
+};
+
+SKK.prototype.showStatus = function() {
+  chrome.input.ime.setCandidates({
+    contextID:this.context,
+    candidates:[{
+      id:0,
+      label:"SKK",
+      candidate:this.currentMode
+    }]
+  }).then(() =>
+    chrome.input.ime.setCandidateWindowProperties({
+      engineID:this.engineID,
+      properties:{
+        visible:true,
+        cursorVisible:true,
+        vertical:true,
+        pageSize:1
+      }
+    })
+  ).then(() => {
+    clearTimeout(this.timeout);
+    this.timeout = setTimeout(() => {
+      this.timeout = null;
+      if (!this.entries || this.entries.index <= 2) {
+        chrome.input.ime.setCandidateWindowProperties({
+          engineID:this.engineID,
+          properties:{
+            visible:false
+          }
+	});
+      }
+    }, 2500);
+  }).catch((e) => console.log(e));
 };
