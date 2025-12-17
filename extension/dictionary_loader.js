@@ -91,6 +91,10 @@ Dictionary.prototype.log = function(obj) {
   chrome.runtime.sendMessage({
     method: "update_dictionary_load_status",
     body: obj
+  }, function(_) {
+    if (chrome.runtime.lastError) {
+      console.log('dictionary logger', chrome.runtime.lastError.message);
+    }
   });
 };
 
