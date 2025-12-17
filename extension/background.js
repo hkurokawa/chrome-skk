@@ -7,3 +7,6 @@ importScripts("preedit_modes.js");
 importScripts("conversion_modes.js");
 importScripts("pako_inflate.es5.min.js");
 importScripts("main.js");
+
+// hack for persistency
+setInterval(() => chrome.runtime.getPlatformInfo(), 20000);
