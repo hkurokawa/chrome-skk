@@ -67,7 +67,7 @@ SKK.prototype.updateCandidates = function() {
         candidate:entry.word,
         id:this.entries.index + i,
         label:"asdfjkl"[i],
-        annotation:this.entries.annotation
+        annotation:entry.annotation
       });
     }
     chrome.input.ime.setCandidates({
