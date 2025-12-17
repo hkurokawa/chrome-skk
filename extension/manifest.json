@@ -6,7 +6,10 @@
   "background": {
     "service_worker": "background.js"
   },
-  "options_page": "options.html",
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "input_components": [
     {
       "name": "SKK (dev)(for US keyboard)",

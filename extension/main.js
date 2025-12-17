@@ -33,7 +33,7 @@ chrome.input.ime.onKeyEvent.addListener(function(engineID, keyData) {
 
 chrome.input.ime.onMenuItemActivated.addListener(function(engineID, name) {
   if (name == 'skk-options') {
-    chrome.tabs.create({ url: chrome.extension.getURL('options.html') });
+    chrome.runtime.openOptionsPage();
     return;
   }
 
