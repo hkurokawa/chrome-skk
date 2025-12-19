@@ -20,7 +20,9 @@ chrome.input.ime.onActivate.addListener(function(engineID) {
 });
 
 chrome.input.ime.onFocus.addListener(function(context) {
-  if (!skk) return;
+  if (!skk) {
+    return;
+  }
   skk.context = context.contextID;
   skk.showStatus();
 });
