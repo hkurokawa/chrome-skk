@@ -48,7 +48,9 @@ function preeditKeybind(skk, keyevent) {
         skk.preedit.slice(skk.caret);
       skk.caret--;
     } else {
-      skk.commitText(skk.preedit);
+      if (skk.preedit.length > 0) {
+        skk.commitText(skk.preedit);
+      }
       skk.preedit = '';
       skk.switchMode('hiragana');
     }
