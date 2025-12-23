@@ -217,7 +217,7 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
 SKK.prototype.createInnerSKK = function() {
   var outer_skk = this;
   var inner_skk = new SKK(this.engineID, this.dictionary);
-  inner_skk.outer_skk = this;
+  inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
   inner_skk.commitText = function(text) {
@@ -349,15 +349,8 @@ SKK.prototype.showStatus = function() {
     return;
   }
 
-  function outermost_skk(skk) {
-    if (skk.outer_skk) {
-      return outermost_skk(skk.outer_skk);
-    }
-    return skk;
-  }
-
   chrome.input.ime.setCandidates({
-    contextID:outermost_skk(this).context,
+    contextID:this.context,
     candidates:[{
       id:0,
       label:"SKK",
