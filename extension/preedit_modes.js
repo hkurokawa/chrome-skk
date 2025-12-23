@@ -24,9 +24,7 @@ function preeditKeybind(skk, keyevent) {
       skk.preedit = skk.oldPreedit;
       skk.roman = skk.oldRoman;
       skk.caret = skk.preedit.length;
-      skk.entries = null;
-      skk.updateCandidates();
-      skk.tabbing = null;
+      skk.userComplete();
       return true;
     }
     skk.preedit = '';
