@@ -5,6 +5,9 @@ function SKK(engineID, dictionary) {
   this.previousMode = null;
   this.roman = '';
   this.preedit = '';
+  this.oldRoman = '';
+  this.oldPreedit = '';
+  this.tabbing = null;
   this.okuriPrefix = '';
   this.okuriText = '';
   this.caret = null;
@@ -67,7 +70,7 @@ SKK.prototype.updateCandidates = function() {
       candidates.push({
         candidate:entry.word,
         id:this.entries.index + i,
-        label:"asdfjkl"[i],
+        label:this.entries.label[i],
         annotation:entry.annotation
       });
     }
@@ -83,6 +86,40 @@ SKK.prototype.lookup = function(reading, callback) {
   } else {
     callback(null);
   }
+};
+
+SKK.prototype.complete = function(dict_complete) {
+  const entries = [];
+  if (this.roman.length > 0) {
+    for (var k in romanTable) {
+      if (k.indexOf(this.roman) == 0) {
+        entries.push(...dict_complete(this.preedit + romanTable[k]));
+      }
+    }
+  }
+  entries.push(...dict_complete(this.preedit + this.roman));
+  if (entries.length > 0) {
+    const candidates = ['', '', ''];
+    candidates.push(...entries.filter((e, i) => entries.indexOf(e) == i));
+    this.entries = {
+      index:3,
+      entries:candidates.map((e) => ({word:e})),
+      label:"       "
+    };
+  } else {
+    this.entries = null;
+  }
+  this.updateCandidates();
+};
+
+SKK.prototype.userComplete = function () {
+  this.complete(this.dictionary.userComplete.bind(this.dictionary));
+  this.tabbing = null;
+};
+
+SKK.prototype.systemComplete = function () {
+  this.complete(this.dictionary.systemComplete.bind(this.dictionary));
+  this.tabbing = 'system';
 };
 
 SKK.prototype.processRoman = function (key, table, emitter) {
@@ -141,6 +178,10 @@ SKK.registerImplicitMode = function(modeName, mode) {
 };
 
 SKK.prototype.switchMode = function(newMode) {
+  this.entries = null;
+  this.oldPreedit = '';
+  this.oldRoman = '';
+  this.tabbing = null;
   if (newMode == this.currentMode) {
     // already switched.
     return;

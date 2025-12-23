@@ -20,7 +20,7 @@ function updateComposition(skk) {
 function initConversion(skk) {
   skk.lookup(skk.preedit + skk.okuriPrefix, function(entries) {
     if (entries) {
-      skk.entries = {index:0, entries:entries};
+      skk.entries = {index:0, entries:entries, label:'asdfjkl'};
       updateComposition(skk);
     } else {
       skk.createInnerSKK();
