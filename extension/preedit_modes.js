@@ -38,9 +38,18 @@ function preeditKeybind(skk, keyevent) {
       skk.tabbing = 'user';
       skk.oldPreedit = skk.preedit;
       skk.oldRoman = skk.roman;
-    }
-    if (skk.entries) {
-      skk.entries.index++;
+      if (keyevent.shiftKey && skk.entries) {
+        skk.entries.index = skk.entries.entries.length - 1;
+      }
+    } else if (skk.entries) {
+      if (!keyevent.shiftKey) {
+        skk.entries.index++;
+      } else {
+        skk.entries.index--;
+        if (skk.entries.index < 3) {
+          skk.entries.index = skk.entries.entries.length - 1;
+        }
+      }
     }
     if (!skk.entries || skk.entries.index >= skk.entries.entries.length) {
       skk.preedit = skk.oldPreedit;
@@ -50,6 +59,8 @@ function preeditKeybind(skk, keyevent) {
       if (!skk.entries) {
         skk.userComplete();
         return true;
+      } else if (keyevent.shiftKey) {
+        skk.entries.index = skk.entries.entries.length - 1;
       }
     }
     skk.preedit = skk.entries.entries[skk.entries.index].word;
