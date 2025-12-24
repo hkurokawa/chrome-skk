@@ -159,6 +159,9 @@ function okuriPreeditInput(skk, keyevent) {
   if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
     skk.commitText(skk.preedit);
     skk.preedit = '';
+    if (skk.roman == 'n') {
+      skk.commitText(romanTable['nn']);
+    }
     skk.roman = '';
     skk.switchMode('hiragana');
     return true;
