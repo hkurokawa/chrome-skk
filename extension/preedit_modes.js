@@ -156,7 +156,7 @@ function updateOkuriComposition(skk) {
 }
 
 function okuriPreeditInput(skk, keyevent) {
-  if (keyevent.key == 'Enter') {
+  if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
     skk.commitText(skk.preedit);
     skk.preedit = '';
     skk.roman = '';
