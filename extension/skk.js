@@ -46,37 +46,48 @@ SKK.prototype.updateCandidates = function() {
     return;
   }
 
-  if (!this.entries || this.entries.index <= 2) {
+  if (!this.entries) {
     chrome.input.ime.setCandidateWindowProperties({
       engineID:this.engineID,
       properties:{
         visible:false
       }});
-  } else {
+    return;
+  }
+
+  const candidates = [];
+  const noList = this.entries ? this.entries.index <= 2 : true;
+  for (var i = 0; i < (noList ? 3 : 7); i++) {
+    const start = noList ? 0 : this.entries.index;
+    if (start + i >= this.entries.entries.length) {
+      break;
+    }
+    const entry = this.entries.entries[start + i];
+    candidates.push({
+      candidate:entry.word,
+      id:start + i,
+      label:noList ? '' : this.entries.label[i],
+      annotation:entry.annotation
+    });
+  }
+  chrome.input.ime.setCandidates({
+    contextID:this.context, candidates:candidates
+  }).then(() =>
     chrome.input.ime.setCandidateWindowProperties({
       engineID:this.engineID,
       properties:{
-      visible:true,
-      cursorVisible:false,
-      vertical:true,
-      pageSize:7
-    }});
-    var candidates = [];
-    for (var i = 0; i < 7; i++) {
-      if (i + this.entries.index >= this.entries.entries.length) {
-        break;
+        visible:true,
+        cursorVisible:true,
+        vertical:true,
+        windowPosition:'composition',
+        pageSize:noList ? 3 : 7
       }
-      var entry = this.entries.entries[this.entries.index + i];
-      candidates.push({
-        candidate:entry.word,
-        id:this.entries.index + i,
-        label:this.entries.label[i],
-        annotation:entry.annotation
-      });
-    }
-    chrome.input.ime.setCandidates({
-      contextID:this.context, candidates:candidates});
-  }
+    })
+  ).then(() =>
+    chrome.input.ime.setCursorPosition({
+      contextID:this.context, candidateID:this.entries.index
+    })
+  ).catch((e) => console.log(e));
 };
 
 SKK.prototype.lookup = function(reading, callback) {
@@ -418,13 +429,13 @@ SKK.prototype.showStatus = function() {
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
       this.timeout = null;
-      if (!this.entries || this.entries.index <= 2) {
+      if (!this.entries) {
         chrome.input.ime.setCandidateWindowProperties({
           engineID:this.engineID,
           properties:{
             visible:false
           }
-	});
+        });
       }
     }, 2500);
   }).catch((e) => console.log(e));
