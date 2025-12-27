@@ -57,11 +57,19 @@ SKK.prototype.updateCandidates = function() {
 
   const candidates = [];
   const noList = this.entries ? this.entries.index <= 2 : true;
-  for (var i = 0; i < (noList ? 3 : 7); i++) {
+  const pageSize = noList ? 3 : 7;
+
+  for (var i = 0; i < pageSize; i++) {
     const start = noList ? 0 : this.entries.index;
     if (start + i >= this.entries.entries.length) {
       break;
     }
+
+    const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
+    if (!this.entries.text || this.entries.text.startsWith('+ ')) {
+      this.entries.text = '+ ' + remaining;
+    }
+
     const entry = this.entries.entries[start + i];
     candidates.push({
       candidate:entry.word,
@@ -70,6 +78,7 @@ SKK.prototype.updateCandidates = function() {
       annotation:entry.annotation
     });
   }
+
   chrome.input.ime.setCandidates({
     contextID:this.context, candidates:candidates
   }).then(() =>
@@ -80,7 +89,9 @@ SKK.prototype.updateCandidates = function() {
         cursorVisible:true,
         vertical:true,
         windowPosition:'composition',
-        pageSize:noList ? 3 : 7
+        pageSize:pageSize,
+        auxiliaryText:this.entries.text,
+        auxiliaryTextVisible:!!this.entries.text
       }
     })
   ).then(() =>
@@ -99,7 +110,7 @@ SKK.prototype.lookup = function(reading, callback) {
   }
 };
 
-SKK.prototype.complete = function(dict_complete) {
+SKK.prototype.complete = function(dict_complete, text) {
   const entries = [];
   if (this.roman.length > 0) {
     for (var k in romanTable) {
@@ -119,7 +130,8 @@ SKK.prototype.complete = function(dict_complete) {
     this.entries = {
       index:3,
       entries:candidates.map((e) => ({word:e})),
-      label:"       "
+      label:"       ",
+      text:text
     };
   } else {
     this.entries = null;
@@ -128,12 +140,12 @@ SKK.prototype.complete = function(dict_complete) {
 };
 
 SKK.prototype.userComplete = function () {
-  this.complete(this.dictionary.userComplete.bind(this.dictionary));
+  this.complete(this.dictionary.userComplete.bind(this.dictionary), 'user');
   this.tabbing = null;
 };
 
 SKK.prototype.systemComplete = function () {
-  this.complete(this.dictionary.systemComplete.bind(this.dictionary));
+  this.complete(this.dictionary.systemComplete.bind(this.dictionary), 'system');
   this.tabbing = 'system';
 };
 
@@ -426,7 +438,8 @@ SKK.prototype.showStatus = function() {
         visible:true,
         cursorVisible:true,
         vertical:true,
-        pageSize:1
+        pageSize:1,
+        auxiliaryTextVisible:false
       }
     })
   ).then(() => {
