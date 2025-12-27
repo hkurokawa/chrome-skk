@@ -108,7 +108,11 @@ SKK.prototype.complete = function(dict_complete) {
       }
     }
   }
-  entries.push(...dict_complete(this.preedit + this.roman));
+  entries.sort((a, b) => b.length - a.length);
+  entries.push(
+    ...dict_complete(this.preedit + this.roman)
+    .sort((a, b) => b.length - a.length)
+  );
   if (entries.length > 0) {
     const candidates = ['', '', ''];
     candidates.push(...entries.filter((e, i) => entries.indexOf(e) == i));
