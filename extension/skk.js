@@ -378,14 +378,16 @@ SKK.prototype.createInnerSKK = function() {
 };
 
 SKK.prototype.recordNewResult = function(entry) {
-  this.dictionary.recordNewResult(this.preedit + this.okuriPrefix, entry);
+  this.dictionary.recordNewResult(this.preedit.replace(/[0-9]+/g, '#') + this.okuriPrefix, entry);
 };
 
 SKK.prototype.finishInner = function(successfully) {
   if (successfully && this.inner_skk.commit_text.length > 0) {
     var new_word = this.inner_skk.commit_text;
     this.recordNewResult({word:new_word});
-    this.commitText(new_word + this.okuriText);
+
+    const numbers = this.preedit.match(/[0-9]+/g) || [];
+    this.commitText(this.dictionary.numberFormat(new_word, numbers) + this.okuriText);
   }
 
   this.inner_skk = null;

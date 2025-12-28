@@ -60,7 +60,10 @@ function conversionMode(skk, keyevent) {
     // do nothing
   } else if (keyevent.key == 'X') {
     var entry = skk.entries.entries[skk.entries.index];
-    skk.dictionary.removeUserEntry(skk.preedit + skk.okuriPrefix, entry.word);
+    skk.dictionary.removeUserEntry(
+      skk.preedit.replace(/[0-9]+/g, '#') + skk.okuriPrefix,
+      entry.rawWord
+    );
     skk.entries = null;
     skk.preedit += skk.okuriText;
     skk.okuriText = '';
@@ -77,7 +80,7 @@ function conversionMode(skk, keyevent) {
     }
     var entry = skk.entries.entries[skk.entries.index];
     skk.commitText(entry.word + skk.okuriText);
-    skk.recordNewResult(entry);
+    skk.recordNewResult({...entry, word:entry.rawWord, rawWord:undefined});
     skk.clearComposition();
     skk.entries = null;
     skk.okuriText = '';

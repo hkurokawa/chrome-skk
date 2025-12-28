@@ -170,26 +170,57 @@ Dictionary.prototype.initUserDictionary = function() {
   });
 };
 
+Dictionary.prototype.numberFormat = function(rawWord, numbers) {
+  const kansuu = ['〇','一','二','三','四','五','六','七','八','九'];
+  const grouping = new Intl.NumberFormat('ja-JP');
+  let r = 0;
+  const word = rawWord.replace(/#[0-8]/g, (n) => {
+    const rawNumber = numbers[r++];
+    switch (n) {
+      case '#1':
+        return rawNumber.split('').map((d) =>
+          String.fromCharCode(d.charCodeAt(0) + 65248)
+        ).join('');
+      case '#2':
+        return rawNumber.split('').map((d) => kansuu[d]).join('');
+      case '#8':
+        return grouping.format(rawNumber);
+      default:
+        return rawNumber;
+    }
+  });
+  return word;
+}
+
 Dictionary.prototype.lookup = function(reading) {
+  const numbers = [];
+  const maskedReading = reading.replace(/[0-9]+/g, (match) => {
+    numbers.push(match);
+    return '#';
+  });
   var entries = [];
-  var userEntries = this.userDict[reading] || [];
-  var systemEntries = this.systemDict[reading] || [];
+  var userEntries = this.userDict[maskedReading] || [];
+  var systemEntries = this.systemDict[maskedReading] || [];
   var word_set = {};
   for (var i = 0; i < userEntries.length; i++) {
-    if (!word_set[userEntries[i].word]) {
-      entries.push(userEntries[i]);
-      word_set[userEntries[i].word] = true;
+    const rawWord = userEntries[i].word;
+    const word = this.numberFormat(rawWord, numbers);
+    if (!word_set[word]) {
+      entries.push({...userEntries[i], rawWord:rawWord, word:word});
+      word_set[word] = true;
     }
   }
   for (var i = 0; i < systemEntries.length; i++) {
-    if (!word_set[systemEntries[i].word]) {
-      word_set[systemEntries[i].word] = true;
-      entries.push(systemEntries[i]);
+    const rawWord = systemEntries[i].word;
+    const word = this.numberFormat(rawWord, numbers);
+    if (!word_set[word]) {
+      entries.push({...systemEntries[i], rawWord:rawWord, word:word});
+      word_set[word] = true;
     }
   }
 
   if (entries.length > 0) {
-    return {reading:reading, data:entries};
+    return {reading:maskedReading, data:entries};
   } else {
     return null;
   }
@@ -244,14 +275,19 @@ function complete(dict, reading) {
   if (!reading || reading.length == 0) {
     return [];
   }
+  const numbers = [];
+  const maskedReading = reading.replace(/[0-9]+/g, (match) => {
+    numbers.push(match);
+    return '#';
+  });
+  let r = 0;
   return Object.keys(dict)
-    .filter((key) => key.startsWith(reading))
+    .filter((key) => key.startsWith(maskedReading))
     .map((key) => {
-      const roman = key.match(/[a-z]*$/)[0];
-      if (roman.length > 0) {
-        return key.slice(0, -roman.length);
-      }
-      return key;
+      let r = 0;
+      return key
+        .replace(/[a-z]*$/, '')
+        .replace(/#/g, () => numbers[r++] || '#');
     });
 }
 
