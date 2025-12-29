@@ -92,6 +92,14 @@ function commitText (obj) {
   }
 }
 
+function deleteSurroundingText(parameters) {
+  const result = document.getElementById('result');
+  const cursor = result.textContent.length;
+  result.textContent =
+    result.textContent.slice(0, cursor + parameters.offset)
+    + result.textContent.slice(cursor + parameters.offset + parameters.length);
+}
+
 var kDefaultCandidateWindowPageSize = 10;
 var candidateWindowProperty = {
   cursorVisible: false,
@@ -242,6 +250,12 @@ function Callbacker(func) {
   };
 }
 
+function Thenabler(func) {
+  return async function(obj) {
+    return func(obj);
+  };
+}
+
 function EventListener() {
   this.listeners_ = [];
 }
@@ -261,8 +275,9 @@ chrome['input'] = {
     setComposition: Callbacker(setComposition),
     clearComposition: Callbacker(clearComposition),
     commitText: Callbacker(commitText),
+    deleteSurroundingText: Callbacker(deleteSurroundingText),
     setCandidateWindowProperties: Callbacker(setCandidateWindowProperties),
-    setCandidates: Callbacker(setCandidates),
+    setCandidates: Thenabler(setCandidates),
     setCursorPosition: NotImplemented,
     setMenuItems: Callbacker(setMenuItems),
     updateMenuItems: Callbacker(updateMenuItems),
@@ -277,6 +292,43 @@ chrome['input'] = {
     onMenuItemActivated: (new EventListener())
   }
 };
+
+const localStore = {};
+const store = {
+  options: {
+    system_dictionary: {
+      url: 'https://tamo.github.io/dict/SKK-JISYO.L.gz',
+      compression: 'gz',
+      encoding: 'utf-8'
+    }
+  }
+};
+chrome['storage'] = {
+  local: {
+    set: (obj) => Object.assign(localStore, obj),
+    get: (key, callback) => callback({[key]: localStore[key]})
+  },
+  onChanged: {
+    addListener: (callback) => { store['_listener'] = callback; }
+  },
+  sync: {
+    set: (obj) => {
+      Object.assign(store, obj);
+      if (store['_listener']) {
+        const changes = {};
+        for (const [key, newValue] of Object.entries(obj)) {
+          changes[key] = {newValue: newValue};
+          store['_listener'](changes);
+        }
+      }
+    },
+    get: (key, callback) => callback({[key]: store[key]})
+  }
+}
+
+chrome['runtime'] = {
+  sendMessage: (_) => {}
+}
 
 var mockEngineId = 'sample';
 var mockContext = {
