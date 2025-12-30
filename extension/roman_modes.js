@@ -58,6 +58,11 @@ function createRomanInput(table) {
         skk.switchMode('ascii-preedit');
         return true;
       }
+
+      if (keyevent.key >= '0' && keyevent.key <= '9') {
+        skk.commitText(keyevent.key);
+        return true;
+      }
     } else if (keyevent.key == 'Q') {
       console.log('here');
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
@@ -79,6 +84,9 @@ function createRomanInput(table) {
       return true;
     } else if (keyevent.key == '!' || keyevent.key == '?') {
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
+      return true;
+    } else if (keyevent.key == '#') {
+      skk.commitText(keyevent.key);
       return true;
     }
 

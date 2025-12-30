@@ -10,17 +10,14 @@ function updateComposition(skk) {
   if (skk.okuriText.length > 0) {
     preedit += skk.okuriText;
   }
-  if (entry.annotation) {
-    preedit += ';' + entry.annotation;
-  }
-  skk.setComposition(preedit, 1, {selectionStart:preedit.length,
+  skk.setComposition(preedit, 1, {selectionStart:1,
                                   selectionEnd:preedit.length});
 }
 
 function initConversion(skk) {
   skk.lookup(skk.preedit + skk.okuriPrefix, function(entries) {
     if (entries) {
-      skk.entries = {index:0, entries:entries};
+      skk.entries = {index:0, entries:entries, label:'asdfjkl'};
       updateComposition(skk);
     } else {
       skk.createInnerSKK();
@@ -63,7 +60,10 @@ function conversionMode(skk, keyevent) {
     // do nothing
   } else if (keyevent.key == 'X') {
     var entry = skk.entries.entries[skk.entries.index];
-    skk.dictionary.removeUserEntry(skk.preedit + skk.okuriPrefix, entry.word);
+    skk.dictionary.removeUserEntry(
+      skk.preedit.replace(/[0-9]+/g, '#') + skk.okuriPrefix,
+      entry.rawWord
+    );
     skk.entries = null;
     skk.preedit += skk.okuriText;
     skk.okuriText = '';
@@ -80,7 +80,7 @@ function conversionMode(skk, keyevent) {
     }
     var entry = skk.entries.entries[skk.entries.index];
     skk.commitText(entry.word + skk.okuriText);
-    skk.recordNewResult(entry);
+    skk.recordNewResult({...entry, word:entry.rawWord, rawWord:undefined});
     skk.clearComposition();
     skk.entries = null;
     skk.okuriText = '';
