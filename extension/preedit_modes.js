@@ -11,8 +11,10 @@ function initPreedit(skk) {
 }
 
 function preeditKeybind(skk, keyevent) {
+  const nn = (skk.roman == 'n') ? romanTable['nn'] : '';
+
   if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
-    skk.commitText(skk.preedit);
+    skk.commitText(skk.preedit + nn);
     skk.preedit = '';
     skk.roman = '';
     skk.switchMode('hiragana');
@@ -58,7 +60,7 @@ function preeditKeybind(skk, keyevent) {
   }
 
   if (keyevent.key == 'q' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(kanaTurnOver(skk.preedit));
+    skk.commitText(kanaTurnOver(skk.preedit + nn));
     skk.preedit = '';
     skk.roman = '';
     skk.switchMode('hiragana');
@@ -66,7 +68,7 @@ function preeditKeybind(skk, keyevent) {
   }
 
   if (keyevent.key == 'l' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(skk.preedit);
+    skk.commitText(skk.preedit + nn);
     skk.preedit = '';
     skk.roman = '';
     skk.switchMode('ascii');
@@ -74,7 +76,7 @@ function preeditKeybind(skk, keyevent) {
   }
 
   if (keyevent.key == 'L' && skk.currentMode != 'ascii-preedit') {
-    skk.commitText(skk.preedit);
+    skk.commitText(skk.preedit + nn);
     skk.preedit = '';
     skk.roman = '';
     skk.switchMode('full-ascii');
@@ -154,9 +156,12 @@ function updateOkuriComposition(skk) {
 }
 
 function okuriPreeditInput(skk, keyevent) {
-  if (keyevent.key == 'Enter') {
+  if (keyevent.key == 'Enter' || (keyevent.key == 'j' && keyevent.ctrlKey)) {
     skk.commitText(skk.preedit);
     skk.preedit = '';
+    if (skk.roman == 'n') {
+      skk.commitText(romanTable['nn']);
+    }
     skk.roman = '';
     skk.switchMode('hiragana');
     return true;
