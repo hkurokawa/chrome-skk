@@ -20,11 +20,16 @@ chrome.input.ime.onActivate.addListener(function(engineID) {
 });
 
 chrome.input.ime.onFocus.addListener(function(context) {
-  if (!skk) {
-    return;
-  }
-  skk.context = context.contextID;
-  skk.showStatus();
+  (function setContext(outer, context) {
+    if (!outer) {
+      return true;
+    }
+    outer.context = context.contextID;
+    if (setContext(outer.inner_skk, context)) {
+      outer.showStatus();
+    }
+    return false;
+  })(skk, context);
 });
 
 chrome.input.ime.onKeyEvent.addListener(function(engineID, keyData) {
