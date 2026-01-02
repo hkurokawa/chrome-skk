@@ -25,6 +25,7 @@ chrome.input.ime.onFocus.addListener(function(context) {
       return true;
     }
     outer.context = context.contextID;
+    outer.private = !context.shouldDoLearning;
     if (setContext(outer.inner_skk, context)) {
       outer.showStatus();
     }
