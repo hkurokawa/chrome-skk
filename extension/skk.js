@@ -11,6 +11,7 @@ function SKK(engineID, dictionary) {
   this.entries = null;
   this.dictionary = dictionary;
   this.timeout = null;
+  this.private = false;
 }
 
 SKK.prototype.commitText = function(text) {
@@ -310,6 +311,7 @@ SKK.prototype.createInnerSKK = function() {
 };
 
 SKK.prototype.recordNewResult = function(entry) {
+  if (this.private) return;
   this.dictionary.recordNewResult(this.preedit + this.okuriPrefix, entry);
 };
 
@@ -353,7 +355,7 @@ SKK.prototype.showStatus = function() {
     contextID:this.context,
     candidates:[{
       id:0,
-      label:"SKK",
+      label:this.private ? 'private' : 'SKK',
       candidate:this.currentMode
     }]
   }).then(() =>
