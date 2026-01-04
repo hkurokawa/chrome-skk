@@ -196,13 +196,6 @@ Dictionary.prototype.lookup = function(reading) {
 };
 
 Dictionary.prototype.recordNewResult = function(reading, newEntry) {
-  var entries = this.lookup(reading);
-
-  // Not necessary to modify the user dictionary if it's already the top.
-  if (entries && entries.data[0].word == newEntry.word) {
-    return;
-  }
-
   var userEntries = this.userDict[reading];
   if (userEntries == null) {
     this.userDict[reading] = [newEntry];
@@ -246,5 +239,28 @@ Dictionary.prototype.removeUserEntry = function(reading, word) {
   }
   this.syncUserDictionary();
 };
+
+function complete(dict, reading) {
+  if (!reading || reading.length == 0) {
+    return [];
+  }
+  return Object.keys(dict)
+    .filter((key) => key.startsWith(reading))
+    .map((key) => {
+      const roman = key.match(/[a-z]*$/)[0];
+      if (roman.length > 0) {
+        return key.slice(0, -roman.length);
+      }
+      return key;
+    });
+}
+
+Dictionary.prototype.userComplete = function(reading) {
+  return complete(this.userDict, reading);
+}
+
+Dictionary.prototype.systemComplete = function(reading) {
+  return complete(this.systemDict, reading);
+}
 
 })();
