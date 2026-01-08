@@ -113,7 +113,7 @@ SKK.prototype.complete = function(dict_complete, text) {
   const entries = [];
   if (this.roman.length > 0) {
     for (var k in romanTable) {
-      if (k.indexOf(this.roman) == 0) {
+      if (k.startsWith(this.roman)) {
         entries.push(...dict_complete(this.preedit + romanTable[k]));
       }
     }
