@@ -57,20 +57,18 @@ SKK.prototype.updateCandidates = function() {
   }
 
   const candidates = [];
-  const noList = this.entries ? this.entries.index <= 2 : true;
+  const noList = this.entries.index <= 2;
   const pageSize = noList ? 3 : 7;
+  const start = noList ? 0 : this.entries.index;
+  const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
+  if (!this.entries.text || this.entries.text.startsWith('+ ')) {
+    this.entries.text = '+ ' + remaining;
+  }
 
   for (var i = 0; i < pageSize; i++) {
-    const start = noList ? 0 : this.entries.index;
     if (start + i >= this.entries.entries.length) {
       break;
     }
-
-    const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
-    if (!this.entries.text || this.entries.text.startsWith('+ ')) {
-      this.entries.text = '+ ' + remaining;
-    }
-
     const entry = this.entries.entries[start + i];
     candidates.push({
       candidate:entry.word,
