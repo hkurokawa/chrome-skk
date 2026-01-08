@@ -10,6 +10,13 @@ function updateComposition(skk) {
 function createRomanInput(table) {
   return function (skk, keyevent) {
     if (keyevent.key == 'Enter') {
+      if (skk.roman == 'n') {
+        const table = (skk.currentMode == 'hiragana') ? romanTable : katakanaTable;
+        skk.commitText(table['nn']);
+      } else if (skk.roman.length > 0) {
+        skk.commitText('');
+      }
+      skk.roman = '';
       return false;
     }
 

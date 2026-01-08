@@ -14,6 +14,7 @@ function SKK(engineID, dictionary) {
   this.entries = null;
   this.dictionary = dictionary;
   this.timeout = null;
+  this.private = false;
 }
 
 SKK.prototype.commitText = function(text) {
@@ -292,7 +293,7 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
 SKK.prototype.createInnerSKK = function() {
   var outer_skk = this;
   var inner_skk = new SKK(this.engineID, this.dictionary);
-  inner_skk.outer_skk = this;
+  inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
   inner_skk.commitText = function(text) {
@@ -385,6 +386,7 @@ SKK.prototype.createInnerSKK = function() {
 };
 
 SKK.prototype.recordNewResult = function(entry) {
+  if (this.private) return;
   this.dictionary.recordNewResult(this.preedit + this.okuriPrefix, entry);
 };
 
@@ -424,18 +426,11 @@ SKK.prototype.showStatus = function() {
     return;
   }
 
-  function outermost_skk(skk) {
-    if (skk.outer_skk) {
-      return outermost_skk(skk.outer_skk);
-    }
-    return skk;
-  }
-
   chrome.input.ime.setCandidates({
-    contextID:outermost_skk(this).context,
+    contextID:this.context,
     candidates:[{
       id:0,
-      label:"SKK",
+      label:this.private ? 'private' : 'SKK',
       candidate:this.currentMode
     }]
   }).then(() =>
