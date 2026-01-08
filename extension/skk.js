@@ -5,6 +5,9 @@ function SKK(engineID, dictionary) {
   this.previousMode = null;
   this.roman = '';
   this.preedit = '';
+  this.oldRoman = '';
+  this.oldPreedit = '';
+  this.tabbing = null;
   this.okuriPrefix = '';
   this.okuriText = '';
   this.caret = null;
@@ -44,37 +47,58 @@ SKK.prototype.updateCandidates = function() {
     return;
   }
 
-  if (!this.entries || this.entries.index <= 2) {
+  if (!this.entries) {
     chrome.input.ime.setCandidateWindowProperties({
       engineID:this.engineID,
       properties:{
         visible:false
-      }});
-  } else {
+      }
+    }).catch((e) => console.log(e));
+    return;
+  }
+
+  const candidates = [];
+  const noList = this.entries.index <= 2;
+  const pageSize = noList ? 3 : 7;
+  const start = noList ? 0 : this.entries.index;
+  const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
+  if (!this.entries.text || this.entries.text.startsWith('+ ')) {
+    this.entries.text = '+ ' + remaining;
+  }
+
+  for (var i = 0; i < pageSize; i++) {
+    if (start + i >= this.entries.entries.length) {
+      break;
+    }
+    const entry = this.entries.entries[start + i];
+    candidates.push({
+      candidate:entry.word,
+      id:start + i,
+      label:noList ? '' : this.entries.label[i],
+      annotation:entry.annotation
+    });
+  }
+
+  chrome.input.ime.setCandidates({
+    contextID:this.context, candidates:candidates
+  }).then(() =>
     chrome.input.ime.setCandidateWindowProperties({
       engineID:this.engineID,
       properties:{
-      visible:true,
-      cursorVisible:false,
-      vertical:true,
-      pageSize:7
-    }});
-    var candidates = [];
-    for (var i = 0; i < 7; i++) {
-      if (i + this.entries.index >= this.entries.entries.length) {
-        break;
+        visible:true,
+        cursorVisible:true,
+        vertical:true,
+        windowPosition:'composition',
+        pageSize:pageSize,
+        auxiliaryText:this.entries.text,
+        auxiliaryTextVisible:!!this.entries.text
       }
-      var entry = this.entries.entries[this.entries.index + i];
-      candidates.push({
-        candidate:entry.word,
-        id:this.entries.index + i,
-        label:"asdfjkl"[i],
-        annotation:entry.annotation
-      });
-    }
-    chrome.input.ime.setCandidates({
-      contextID:this.context, candidates:candidates});
-  }
+    }).catch((e) => console.log(e))
+  ).then(() =>
+    chrome.input.ime.setCursorPosition({
+      contextID:this.context, candidateID:this.entries.index
+    })
+  ).catch((e) => console.log(e));
 };
 
 SKK.prototype.lookup = function(reading, callback) {
@@ -84,6 +108,53 @@ SKK.prototype.lookup = function(reading, callback) {
   } else {
     callback(null);
   }
+};
+
+SKK.prototype.complete = function(dict_complete, text) {
+  const entries = [];
+  if (this.roman.length > 0) {
+    for (var k in romanTable) {
+      if (k.startsWith(this.roman)) {
+        entries.push(...dict_complete(this.preedit + romanTable[k]));
+      }
+    }
+  }
+  entries.sort((a, b) => b.length - a.length);
+  entries.push(
+    ...dict_complete(this.preedit + this.roman)
+    .sort((a, b) => b.length - a.length)
+  );
+  if (entries.length > 0) {
+    const candidates = ['', '', ''];
+    const seen = new Set();
+    const uniqueEntries = [];
+    for (const e of entries) {
+      if (!seen.has(e)) {
+        seen.add(e);
+        uniqueEntries.push(e);
+      }
+    }
+    candidates.push(...uniqueEntries);
+    this.entries = {
+      index:3,
+      entries:candidates.map((e) => ({word:e})),
+      label:"       ",
+      text:text
+    };
+  } else {
+    this.entries = null;
+  }
+  this.updateCandidates();
+};
+
+SKK.prototype.userComplete = function () {
+  this.complete(this.dictionary.userComplete.bind(this.dictionary), 'user');
+  this.tabbing = null;
+};
+
+SKK.prototype.systemComplete = function () {
+  this.complete(this.dictionary.systemComplete.bind(this.dictionary), 'system');
+  this.tabbing = 'system';
 };
 
 SKK.prototype.processRoman = function (key, table, emitter) {
@@ -142,6 +213,10 @@ SKK.registerImplicitMode = function(modeName, mode) {
 };
 
 SKK.prototype.switchMode = function(newMode) {
+  this.entries = null;
+  this.oldPreedit = '';
+  this.oldRoman = '';
+  this.tabbing = null;
   if (newMode == this.currentMode) {
     // already switched.
     return;
@@ -365,20 +440,21 @@ SKK.prototype.showStatus = function() {
         visible:true,
         cursorVisible:true,
         vertical:true,
-        pageSize:1
+        pageSize:1,
+        auxiliaryTextVisible:false
       }
-    })
+    }).catch((e) => console.log(e))
   ).then(() => {
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
       this.timeout = null;
-      if (!this.entries || this.entries.index <= 2) {
+      if (!this.entries) {
         chrome.input.ime.setCandidateWindowProperties({
           engineID:this.engineID,
           properties:{
             visible:false
           }
-	});
+        }).catch((e) => console.log(e));
       }
     }, 2500);
   }).catch((e) => console.log(e));
