@@ -126,15 +126,7 @@ SKK.prototype.complete = function(dict_complete, text) {
   );
   if (entries.length > 0) {
     const candidates = ['', '', ''];
-    const seen = new Set();
-    const uniqueEntries = [];
-    for (const e of entries) {
-      if (!seen.has(e)) {
-        seen.add(e);
-        uniqueEntries.push(e);
-      }
-    }
-    candidates.push(...uniqueEntries);
+    candidates.push(...new Set(entries));
     this.entries = {
       index:3,
       entries:candidates.map((e) => ({word:e})),
