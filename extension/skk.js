@@ -125,8 +125,7 @@ SKK.prototype.complete = function(dict_complete, text) {
     .sort((a, b) => b.length - a.length)
   );
   if (entries.length > 0) {
-    const candidates = ['', '', ''];
-    candidates.push(...new Set(entries));
+    const candidates = ['', '', '', ...new Set(entries)];
     this.entries = {
       index:3,
       entries:candidates.map((e) => ({word:e})),
