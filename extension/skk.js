@@ -436,6 +436,10 @@ SKK.prototype.showStatus = function() {
       }
     }).catch((e) => console.log(e))
   ).then(() => {
+    chrome.input.ime.setCursorPosition({
+      contextID:this.context, candidateID:0
+    }).catch((e) => console.log(e));
+
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
       this.timeout = null;
