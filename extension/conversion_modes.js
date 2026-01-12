@@ -18,9 +18,19 @@ function updateComposition(skk) {
 }
 
 function initConversion(skk) {
+  let hint = '';
+  const semicolon = skk.preedit.indexOf(';');
+  if (semicolon > 0) {
+    hint = skk.preedit.slice(semicolon + 1);
+    skk.preedit = skk.preedit.slice(0, semicolon);
+  }
   skk.lookup(skk.preedit + skk.okuriPrefix, function(entries) {
     if (entries) {
-      skk.entries = {index:0, entries:entries};
+      skk.entries = {
+        index:0,
+        entries:hint ? skk.narrowDown(entries, hint) : entries,
+        label:'asdfjkl'
+      };
       updateComposition(skk);
     } else {
       skk.createInnerSKK();

@@ -86,6 +86,15 @@ SKK.prototype.lookup = function(reading, callback) {
   }
 };
 
+SKK.prototype.narrowDown = function(entries, hint) {
+  const words = this.dictionary.lookup(hint);
+  if (!words) {
+    return [];
+  }
+  const kanjis = words.data.flatMap((w) => [...w.word]);
+  return entries.filter((e) => kanjis.some((k) => e.word.includes(k)));
+};
+
 SKK.prototype.processRoman = function (key, table, emitter) {
   function isStarting(key) {
     var starting = false;
