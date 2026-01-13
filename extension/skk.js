@@ -219,6 +219,15 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
     }
   }
 
+  if (this.engineID == 'sample' && !consumed && keyevent.key == 'Backspace') {
+    chrome.input.ime.deleteSurroundingText({
+      contextID: this.context,
+      engineID: this.engineID,
+      length: 1,
+      offset: -1
+    });
+    consumed = true;
+  }
   this.updateComposition();
   this.updateCandidates();
   return consumed;
