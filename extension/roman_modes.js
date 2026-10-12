@@ -76,6 +76,7 @@ function createRomanInput(table) {
             text + skk.preedit.slice(skk.caret);
           skk.caret += text.length;
         });
+      skk.userComplete();
       return true;
     } else if (keyevent.key == '!' || keyevent.key == '?') {
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));

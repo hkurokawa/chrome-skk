@@ -10,10 +10,7 @@ function updateComposition(skk) {
   if (skk.okuriText.length > 0) {
     preedit += skk.okuriText;
   }
-  if (entry.annotation) {
-    preedit += ';' + entry.annotation;
-  }
-  skk.setComposition(preedit, 1, {selectionStart:preedit.length,
+  skk.setComposition(preedit, 1, {selectionStart:1,
                                   selectionEnd:preedit.length});
 }
 
