@@ -146,6 +146,13 @@ SKK.prototype.userComplete = function () {
 SKK.prototype.systemComplete = function () {
   this.complete(this.dictionary.systemComplete.bind(this.dictionary), 'system');
   this.tabbing = 'system';
+SKK.prototype.narrowDown = function(entries, hint) {
+  const words = this.dictionary.lookup(hint);
+  if (!words) {
+    return [];
+  }
+  const kanjis = words.data.flatMap((w) => [...w.word]);
+  return entries.filter((e) => kanjis.some((k) => e.word.includes(k)));
 };
 
 SKK.prototype.processRoman = function (key, table, emitter) {
