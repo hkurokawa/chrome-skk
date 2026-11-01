@@ -32,6 +32,7 @@ function createRomanInput(table) {
     }
 
     if (keyevent.key == 'j' && keyevent.ctrlKey) {
+      skk.switchMode('hiragana');
       return true;
     }
 
