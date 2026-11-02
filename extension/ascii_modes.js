@@ -23,7 +23,8 @@ function createAsciiLikeMode(conv) {
 SKK.registerMode('ascii', {
   displayName: '\u82f1\u6570',
   keyHandler: createAsciiLikeMode(function(skk, key) {
-    return false;
+    skk.commitText(key);
+    return true;
   })
 });
 
