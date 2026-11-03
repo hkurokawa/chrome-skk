@@ -14,6 +14,7 @@ function SKK(engineID, dictionary) {
   this.entries = null;
   this.dictionary = dictionary;
   this.timeout = null;
+  this.private = false;
 }
 
 SKK.prototype.commitText = function(text) {
@@ -51,7 +52,8 @@ SKK.prototype.updateCandidates = function() {
       engineID:this.engineID,
       properties:{
         visible:false
-      }});
+      }
+    }).catch((e) => console.log(e));
     return;
   }
 
@@ -59,17 +61,16 @@ SKK.prototype.updateCandidates = function() {
   const noList = this.entries ? this.entries.index <= 2 : true;
   const pageSize = noList ? 3 : 7;
 
+  const start = noList ? 0 : this.entries.index;
+  const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
+  if (!this.entries.text || this.entries.text.startsWith('+ ')) {
+    this.entries.text = '+ ' + remaining;
+  }
+
   for (var i = 0; i < pageSize; i++) {
-    const start = noList ? 0 : this.entries.index;
     if (start + i >= this.entries.entries.length) {
       break;
     }
-
-    const remaining = Math.max(0, this.entries.entries.length - start - pageSize);
-    if (!this.entries.text || this.entries.text.startsWith('+ ')) {
-      this.entries.text = '+ ' + remaining;
-    }
-
     const entry = this.entries.entries[start + i];
     candidates.push({
       candidate:entry.word,
@@ -93,7 +94,7 @@ SKK.prototype.updateCandidates = function() {
         auxiliaryText:this.entries.text,
         auxiliaryTextVisible:!!this.entries.text
       }
-    })
+    }).catch((e) => console.log(e))
   ).then(() =>
     chrome.input.ime.setCursorPosition({
       contextID:this.context, candidateID:this.entries.index
@@ -114,7 +115,7 @@ SKK.prototype.complete = function(dict_complete, text) {
   const entries = [];
   if (this.roman.length > 0) {
     for (var k in romanTable) {
-      if (k.indexOf(this.roman) == 0) {
+      if (k.startsWith(this.roman)) {
         entries.push(...dict_complete(this.preedit + romanTable[k]));
       }
     }
@@ -125,7 +126,7 @@ SKK.prototype.complete = function(dict_complete, text) {
     .sort((a, b) => b.length - a.length)
   );
   if (entries.length > 0) {
-    const candidates = ['', '', ''];
+    const candidates = ['', '', '', ...new Set(entries)];
     candidates.push(...entries.filter((e, i) => entries.indexOf(e) == i));
     this.entries = {
       index:3,
@@ -147,6 +148,15 @@ SKK.prototype.userComplete = function () {
 SKK.prototype.systemComplete = function () {
   this.complete(this.dictionary.systemComplete.bind(this.dictionary), 'system');
   this.tabbing = 'system';
+};
+
+SKK.prototype.narrowDown = function(entries, hint) {
+  const words = this.dictionary.lookup(hint);
+  if (!words) {
+    return [];
+  }
+  const kanjis = words.data.flatMap((w) => [...w.word]);
+  return entries.filter((e) => kanjis.some((k) => e.word.includes(k)));
 };
 
 SKK.prototype.processRoman = function (key, table, emitter) {
@@ -285,7 +295,7 @@ SKK.prototype.handleKeyEvent = function(keyevent) {
 SKK.prototype.createInnerSKK = function() {
   var outer_skk = this;
   var inner_skk = new SKK(this.engineID, this.dictionary);
-  inner_skk.outer_skk = this;
+  inner_skk.context = this.context;
   inner_skk.commit_text = '';
   inner_skk.commit_cursor = 0;
   inner_skk.commitText = function(text) {
@@ -378,6 +388,7 @@ SKK.prototype.createInnerSKK = function() {
 };
 
 SKK.prototype.recordNewResult = function(entry) {
+  if (this.private) return;
   this.dictionary.recordNewResult(this.preedit.replace(/[0-9]+/g, '#') + this.okuriPrefix, entry);
 };
 
@@ -419,18 +430,11 @@ SKK.prototype.showStatus = function() {
     return;
   }
 
-  function outermost_skk(skk) {
-    if (skk.outer_skk) {
-      return outermost_skk(skk.outer_skk);
-    }
-    return skk;
-  }
-
   chrome.input.ime.setCandidates({
-    contextID:outermost_skk(this).context,
+    contextID:this.context,
     candidates:[{
       id:0,
-      label:"SKK",
+      label:this.private ? 'private' : 'SKK',
       candidate:this.currentMode
     }]
   }).then(() =>
@@ -443,8 +447,12 @@ SKK.prototype.showStatus = function() {
         pageSize:1,
         auxiliaryTextVisible:false
       }
-    })
+    }).catch((e) => console.log(e))
   ).then(() => {
+    chrome.input.ime.setCursorPosition({
+      contextID:this.context, candidateID:0
+    }).catch((e) => console.log(e));
+
     clearTimeout(this.timeout);
     this.timeout = setTimeout(() => {
       this.timeout = null;
@@ -454,7 +462,7 @@ SKK.prototype.showStatus = function() {
           properties:{
             visible:false
           }
-        });
+        }).catch((e) => console.log(e));
       }
     }, 2500);
   }).catch((e) => console.log(e));

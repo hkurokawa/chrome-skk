@@ -10,6 +10,13 @@ function updateComposition(skk) {
 function createRomanInput(table) {
   return function (skk, keyevent) {
     if (keyevent.key == 'Enter') {
+      if (skk.roman == 'n') {
+        const table = (skk.currentMode == 'hiragana') ? romanTable : katakanaTable;
+        skk.commitText(table['nn']);
+      } else if (skk.roman.length > 0) {
+        skk.commitText('');
+      }
+      skk.roman = '';
       return false;
     }
 
@@ -25,6 +32,7 @@ function createRomanInput(table) {
     }
 
     if (keyevent.key == 'j' && keyevent.ctrlKey) {
+      skk.switchMode('hiragana');
       return true;
     }
 
@@ -74,6 +82,7 @@ function createRomanInput(table) {
             text + skk.preedit.slice(skk.caret);
           skk.caret += text.length;
         });
+      skk.userComplete();
       return true;
     } else if (keyevent.key == '!' || keyevent.key == '?') {
       skk.processRoman(keyevent.key, table, skk.commitText.bind(skk));
