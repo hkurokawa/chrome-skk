@@ -284,10 +284,6 @@ function complete(dict, reading) {
   return Object.keys(dict)
     .filter((key) => key.startsWith(maskedReading))
     .map((key) => {
-      const roman = key.match(/[a-z]*$/)[0];
-      if (roman.length > 0) {
-        key = key.slice(0, -roman.length);
-      }
       let r = 0;
       return key
         .replace(/[a-z]*$/, '')
