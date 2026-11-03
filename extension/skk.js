@@ -58,7 +58,7 @@ SKK.prototype.updateCandidates = function() {
   }
 
   const candidates = [];
-  const noList = this.entries ? this.entries.index <= 2 : true;
+  const noList = this.entries.index <= 2;
   const pageSize = noList ? 3 : 7;
 
   const start = noList ? 0 : this.entries.index;
@@ -127,7 +127,6 @@ SKK.prototype.complete = function(dict_complete, text) {
   );
   if (entries.length > 0) {
     const candidates = ['', '', '', ...new Set(entries)];
-    candidates.push(...entries.filter((e, i) => entries.indexOf(e) == i));
     this.entries = {
       index:3,
       entries:candidates.map((e) => ({word:e})),
